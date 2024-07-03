@@ -12,18 +12,18 @@ func main() {
 
 	newUser := DB.User{
 		Username: "johnDoe",
-		Password: "secretPassword",
+		Password: "PasswordHash", // Will need to write hashing logic
 	}
 	DB.CreateUser(db, newUser)
 
-	username := "1-johnDoe"
+	username := "johnDoe"
 	password := "secretPassword"
-	authenticatedUser, token, err := DB.Authenticate(db, username, password)
+	authenticatedUser, err := DB.Authenticate(db, username, password)
 	if err != nil {
 		fmt.Println("Authentication failed:", err)
 		return
 	}
-	fmt.Printf("User authenticated: %s, Token: %s\n", authenticatedUser.Username, token)
+	fmt.Printf("User authenticated: %s\n", authenticatedUser.Username)
 }
 
 

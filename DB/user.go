@@ -3,9 +3,8 @@ package DB
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	// "github.com/dgrijalva/jwt-go"
 	"github.com/boltdb/bolt"
 )
 
@@ -19,8 +18,6 @@ type User struct {
 const (
 	userBucket = "users"
 	teamBucket = "teams"
-	// Used for genearting JWT tokens
-	secretKey = "3ut3slEsuGvWxEh4R/OdW+hpSmVrOD8gHMAxMlQXo5CfQhmZvmaH+npQgCb4LFkfW0r9zxNYlrsaY5w/dwsYKw=="
 )
 
 func CreateUser(db *bolt.DB, user User) error {
@@ -37,7 +34,7 @@ func CreateUser(db *bolt.DB, user User) error {
 	})
 }
 
-func Authenticate(db *bolt.DB, username, password string) (*User, string, error) {
+func Authenticate(db *bolt.DB, username, password string) (*User, error) {
 	var user User
 	err := db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(userBucket))
@@ -47,24 +44,15 @@ func Authenticate(db *bolt.DB, username, password string) (*User, string, error)
 		}
 		return json.Unmarshal(val, &user)
 	})
+
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	if user.Password != password {
-		return nil, "", fmt.Errorf("Invalid Password")
+		return nil, fmt.Errorf("Invalid Password")
 	}
 
-	// Generate JWT token
-	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": username,
-		"exp":      time.Now().Add(time.Hour).Unix(), // Token expiry time
-	})
-	token, err := claims.SignedString([]byte(secretKey))
-	if err != nil {
-		return nil, "", err
-	}
-
-	return &user, token, nil
+	return &user, nil
 }
 
