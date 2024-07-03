@@ -3,7 +3,7 @@ package DB
 import (
 	"time"
 
-	"github.com/boltdb/bolt"
+	bolt "go.etcd.io/bbolt"
 )
 
 func tryAddBucket(name string, db *bolt.DB) error {

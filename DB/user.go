@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	// "github.com/dgrijalva/jwt-go"
-	"github.com/boltdb/bolt"
+	bolt "go.etcd.io/bbolt"
 )
 
 // User struct to store user information
