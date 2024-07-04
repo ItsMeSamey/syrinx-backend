@@ -56,7 +56,6 @@ func getFromBucket(tx *bolt.Tx, bucket string, key []byte) ([]byte, error) {
 	return val, nil
 }
 
-
 func (user *User) setSessionID() error {
 	sessionID, err := genSessionID()
 	if err != nil {
