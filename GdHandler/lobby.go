@@ -13,7 +13,7 @@ import (
 )
 
 type Players struct {
-  id int
+  DB.User
   conn *websocket.Conn
 }
 
@@ -107,7 +107,7 @@ func (lobby *Lobby) Syncronizer() {
   for _, i := range lobby.players {
     go (func ()  {
       // HACK: Donot discard the error try again
-      // Also set a context timeout to prevent a deadlock
+      // FIXME: Set a timeout to prevent a deadlock (maybe using context)
       _ = i.conn.WriteMessage(websocket.BinaryMessage, lobby.dataPool)
       wg.Done()
     })()
