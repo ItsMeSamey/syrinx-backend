@@ -20,14 +20,14 @@ func getUserAuth(messageType int, message []byte) (*DB.User, error) {
 	}
 	data := message[1:]
 	if message[0] == '0' {
-		return DB.GetUserFromSessionID(string(data))
+		return DB.UserFromSessionID(data)
 	} else if message[0] == '1' {
 		var auth authUser
 		err := json.Unmarshal(message, &auth)
 		if err != nil {
 			return nil, errors.New("getUserAuth: Json Unmarshal Error")
 		}
-		return DB.Authenticate(auth.Username, auth.Password)
+		return DB.UserAuthenticate(auth.Username, auth.Password)
 	}
 	return nil, errors.New("getUserAuth: spec violation")
 }

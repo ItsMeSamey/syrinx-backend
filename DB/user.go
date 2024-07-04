@@ -18,7 +18,7 @@ const (
 type User struct {
 	Username  string `json:"user"`
 	Password  string `json:"pass"`
-	UserId    string `json:"userID"`
+	UserId    int    `json:"userID"`
 	TeamID    int    `json:"teamID"`
 	SessionID string `json:"sesisonID"`
 }
@@ -39,7 +39,7 @@ func (user *User) Create() error {
 		return err
 	}
 	if exists {
-		return errors.New("CreateUser: User Exists")
+		return errors.New("User.Create: User Exists")
 	}
 
 	tries := 0
@@ -56,7 +56,7 @@ start:
 	if exists {
 		tries += 1
 		if tries > 1024*1024 {
-			return errors.New("Create: I'm a Teapot")
+			return errors.New("User.Create: 418 I'm A Teapot")
 		}
 		goto start
 	}
@@ -69,26 +69,25 @@ start:
 	return UserDB.addToBucket(userBucket, []byte(user.Username), data)
 }
 
-func (user *User) Authenticate() error {
-	var tempUser User
-	val, err := UserDB.getFromBucket(userBucket, []byte(user.Username))
+func UserAuthenticate(username, password string) (*User, error) {
+	var user User
+	val, err := UserDB.getFromBucket(userBucket, []byte(username))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = json.Unmarshal(val, &tempUser)
+	err = json.Unmarshal(val, &user)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if tempUser.Password != user.Password {
-		return fmt.Errorf("Authenticate: Invalid Password")
+	if user.Password != password {
+		return nil, fmt.Errorf("UserAuthenticate: Invalid Password")
 	}
-	user = &tempUser
-	return nil
+	return &user, nil
 }
 
-func GetUserFromSessionID(SessionID []byte) (*User, error) {
+func UserFromSessionID(SessionID []byte) (*User, error) {
 	val, err := UserDB.getFromBucket(sessionBucket, SessionID)
 	if err != nil {
 		return nil, err
