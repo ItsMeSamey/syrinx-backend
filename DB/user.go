@@ -18,10 +18,10 @@ const (
 
 // User struct to store user information
 type User struct {
-	Username string `json:"user"`
-	Password string `json:"pass"`
-	UserId string	  `json:"userID"`
-	TeamID   int    `json:"teamID"`
+	Username  string `json:"user"`
+	Password  string `json:"pass"`
+	UserId    string `json:"userID"`
+	TeamID    int    `json:"teamID"`
 	SessionID string `json:"sesisonID"`
 }
 
@@ -56,34 +56,21 @@ func getFromBucket(tx *bolt.Tx, bucket string, key []byte) ([]byte, error) {
 	return val, nil
 }
 
-func (user *User) setSessionID() error {
-	sessionID, err := genSessionID()
-	if err != nil {
-		return err
-	}
-	// Set the user's ssession id to a <unique> and random base64 encoded string
-	// also make a bucket to hold session keys and respective user names
-	// TODO: when user reauthanticates, old one should be deleted and a new token must be generated
-	return DBInstance.Update(func(tx *bolt.Tx) error {
-		return addToBucket(tx, sessionBucket, []byte(sessionID), []byte(user.Username))
-	})
-}
-
-func deleteExistingSession(tx *bolt.Tx, userID string) error {
-	return errors.New("Not Implemented")
-}
-
-func UserExists(username string) (bool, error) {
-	isPresent := true
-	return isPresent, DBInstance.View(func(tx *bolt.Tx) error {
+func DoesExist(bucket string, key []byte) (bool, error) {
+	isThere := true
+	return isThere, DBInstance.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(userBucket))
 		if b == nil {
 			return errors.New("getFromBucket: bucket is nil")
 		}
-		val := b.Get([]byte(username))
-		isPresent = val == nil
+		val := b.Get(key)
+		isThere = val == nil
 		return nil
 	})
+}
+
+func UserExists(username string) (bool, error) {
+	return DoesExist(userBucket, []byte(username))
 }
 
 func (user *User) Create() error {
@@ -95,6 +82,26 @@ func (user *User) Create() error {
 	if exists {
 		return errors.New("CreateUser: User Exists")
 	}
+
+	tries := 0
+start:
+	sessionID, err := genSessionID()
+	if err != nil {
+		return err
+	}
+
+	exists, err = DoesExist(sessionBucket, []byte(sessionID))
+	if err != nil {
+		return err
+	}
+	if exists {
+		tries += 1
+		if tries > 1024*1024 {
+			return errors.New("Create: I'm a Teapot")
+		}
+		goto start
+	}
+
 	return DBInstance.Update(func(tx *bolt.Tx) error {
 		data, err := json.Marshal(user)
 		if err != nil {
