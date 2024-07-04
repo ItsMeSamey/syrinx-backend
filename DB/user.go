@@ -11,7 +11,8 @@ import (
 type User struct {
 	Username string `json:"user"`
 	Password string `json:"pass"`
-	TeamID   int `json:"tID"`
+	TeamID   int    `json:"teamID"`
+	SessionID string `json:"sesisonID"`
 }
 
 const (
@@ -19,8 +20,8 @@ const (
 	teamBucket = "teams"
 )
 
-func CreateUser(db *bolt.DB, user User) error {
-	return db.Update(func(tx *bolt.Tx) error {
+func CreateUser(user User) error {
+	return DBInstance.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(userBucket))
 		data, err := json.Marshal(user)
 		if err != nil {
@@ -33,9 +34,9 @@ func CreateUser(db *bolt.DB, user User) error {
 	})
 }
 
-func Authenticate(db *bolt.DB, username, password string) (*User, error) {
+func Authenticate(username, password string) (*User, string, error) {
 	var user User
-	err := db.View(func(tx *bolt.Tx) error {
+	err := DBInstance.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(userBucket))
 		val := b.Get([]byte(username))
 		if val == nil {
@@ -45,13 +46,32 @@ func Authenticate(db *bolt.DB, username, password string) (*User, error) {
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	if user.Password != password {
-		return nil, fmt.Errorf("Invalid Password")
+		return nil, "", fmt.Errorf("Invalid Password")
 	}
-
-	return &user, nil
+	
+	id, err := genSessionID(&user)
+	if err != nil {
+		return nil, "", fmt.Errorf("SessionID Creation Failed")
+	}
+	return &user, id, nil
 }
 
+func genSessionID(user *User) (string, error) {
+	// TODO: when user reauthanticates, old one should be deleted and a new token must be generated
+	_ = user
+	return "", nil
+}
+
+func GetUserFromSessionID(sessionID string) *User {
+	// TODO: lookup the sesisonID table
+	return nil
+}
+
+func GetSessionIDFromUser(user *User) {
+	// TODO: Implement creation of user's sessionID 
+	// NOTE: One user must have only 1 session ID,
+}

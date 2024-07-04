@@ -6,26 +6,29 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-func tryAddBucket(name string, db *bolt.DB) error {
-	return db.Update(func(tx *bolt.Tx) error {
+var DBInstance *bolt.DB = nil
+
+func tryAddBucket(name string) error {
+	return DBInstance.Update(func(tx *bolt.Tx) error {
 			_, err := tx.CreateBucketIfNotExists([]byte(name))
 			return err
 	})
 }
 
-func OpenDb(name string) (*bolt.DB, error) {
+func OpenDb(name string) (error) {
 	db, err := bolt.Open(name, 0600, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil || db == nil {
-		return nil, err
+		return err
+	}
+	DBInstance = db
+
+	if err := tryAddBucket(userBucket); err != nil {
+		return err
+	}
+	if err := tryAddBucket(teamBucket); err != nil {
+		return err
 	}
 
-	if err := tryAddBucket(userBucket, db); err != nil {
-		return nil, err
-	}
-	if err := tryAddBucket(teamBucket, db); err != nil {
-		return nil, err
-	}
-
-	return db, nil
+	return nil
 }
 

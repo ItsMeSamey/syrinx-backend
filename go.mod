@@ -3,7 +3,7 @@ module ccs.ctf
 go 1.22.4
 
 require (
-	github.com/boltdb/bolt v1.3.1
+	github.com/gorilla/websocket v1.5.3
 	go.etcd.io/bbolt v1.3.10
 )
 
