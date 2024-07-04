@@ -7,23 +7,28 @@ import (
 	"ccs.ctf/DB"
 
 	"github.com/gorilla/websocket"
-	bolt "go.etcd.io/bbolt"
 )
 
 type authUser struct {
-	username string `json:"user"`
-	password string `json:"pass"`
+	Username string `json:"user"`
+	Password string `json:"pass"`
 }
 
 func getUserAuth(messageType int, message []byte) (*DB.User, error) {
 	if (messageType != websocket.TextMessage) {
 		return nil, errors.New("getUserAuth: Invalid messageType")
 	}
-	var user *DB.User
 	data := message[1:]
-	if (message[0] == '0') {
-		DB.GetUserFromSessionID(string(data))
+	if message[0] == '0' {
+		return DB.GetUserFromSessionID(string(data))
+	} else if message[0] == '1' {
+		var auth authUser
+		err := json.Unmarshal(message, &auth)
+		if err != nil {
+			return nil, errors.New("getUserAuth: Json Unmarshal Error")
+		}
+		return DB.Authenticate(auth.Username, auth.Password)
 	}
-	return &user, nil
+	return nil, errors.New("getUserAuth: spec violation")
 }
 

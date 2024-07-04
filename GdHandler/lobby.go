@@ -78,15 +78,15 @@ func (lobby *Lobby) wsHandler(w http.ResponseWriter, r *http.Request) error {
       continue
     }
 
-    switch messageType{
-    case websocket.TextMessage:
+    if messageType == websocket.TextMessage {
       err = lobby.handleTextMessage(message)
-    case websocket.BinaryMessage:
+    } else if messageType == websocket.BinaryMessage{
       // Consider making this async
       // This may lead to partially unmerged packets as batching may happen before
       // merging is completed by all of the players, but is that even a problem?
       lobby.handleBinaryMessage(message)
-    default: err =  errors.New("wsHandler: Invalid messageType: " + strconv.Itoa(messageType))
+    } else {
+      err = errors.New("wsHandler: Invalid messageType: " + strconv.Itoa(messageType))
     }
     if err != nil {
       log.Println("wsHandler: error:", err)
@@ -116,6 +116,7 @@ func (lobby *Lobby) Syncronizer() {
   for _, i := range lobby.players {
     go (func ()  {
       // HACK: Donot discard the error try again
+      // Also set a context timeout to prevent a deadlock
       _ = i.conn.WriteMessage(websocket.BinaryMessage, lobby.dataPool)
       wg.Done()
     })()
