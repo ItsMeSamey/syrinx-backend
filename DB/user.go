@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 
 	bolt "go.etcd.io/bbolt"
 )
@@ -14,7 +13,7 @@ import (
 const (
 	userBucket = "users"
 	teamBucket = "teams"
-	sessionsBucket = "sessions"
+	sessionBucket = "sessions"
 )
 
 // User struct to store user information
@@ -26,19 +25,8 @@ type User struct {
 	SessionID string `json:"sesisonID"`
 }
 
-func setSessionID(user *User) (error) {
-	// Set the user's ssession id to a <unique> and random base64 encoded string
-	// also make a bucket to hold session keys and respective user names
-	// TODO: when user reauthanticates, old one should be deleted and a new token must be generated
-	_ = user
-	return nil
-}
-
-
-//start*****
-
-func generateSessionID() (string, error) {
-	bytes := make([]byte, 16) // 16 bytes = 128 bits
+func genSessionID() (string, error) {
+	bytes := make([]byte, 6*16)
 	if _, err := rand.Read(bytes); 
 	err != nil {
 		return "", err
@@ -46,79 +34,60 @@ func generateSessionID() (string, error) {
 	return base64.URLEncoding.EncodeToString(bytes), nil
 }
 
-func createSession(db *bolt.DB, userID, username string) (string, error) {
-	sessionID, err := generateSessionID()
-	if err != nil {
-		return "", err
+func addToBucket(tx *bolt.Tx, bucket string, key []byte, val []byte) error {
+	b := tx.Bucket([]byte(bucket))
+	if b == nil {
+		return errors.New("addToBucket: bucket is nil")
 	}
+	if err := b.Put(key, val); err != nil {
+		return err
+	}
+	return nil
+}
+func getFromBucket(tx *bolt.Tx, bucket string, key []byte) ([]byte, error) {
+	b := tx.Bucket([]byte(bucket))
+	if b == nil {
+		return nil, errors.New("getFromBucket: bucket is nil")
+	}
+	val := b.Get(key)
+	if val == nil {
+		return nil, fmt.Errorf("getFromBucket: key not found")
+	}
+	return val, nil
+}
 
-	err = db.Update(func(tx *bolt.Tx) error {
-		// Create or get the sessions bucket
-		sessionsBucket, err := tx.CreateBucketIfNotExists([]byte(sessionsBucket))
-		if err != nil {
-			return err
-		}
 
-		// Create or get the user bucket
-		userBucket, err := tx.CreateBucketIfNotExists([]byte(userBucket))
-		if err != nil {
-			return err
-		}
-
-		// Store session ID associated with user ID
-		err = sessionsBucket.Put([]byte(sessionID), []byte(userID))
-		if err != nil {
-			return err
-		}
-
-		// Store session ID associated with username
-		err = usernamesBucket.Put([]byte(sessionID), []byte(username))
-		if err != nil {
-			return err
-		}
-
-		return nil
+func (user *User) setSessionID() error {
+	sessionID, err := genSessionID()
+	if err != nil {
+		return err
+	}
+	// Set the user's ssession id to a <unique> and random base64 encoded string
+	// also make a bucket to hold session keys and respective user names
+	// TODO: when user reauthanticates, old one should be deleted and a new token must be generated
+	return DBInstance.Update(func(tx *bolt.Tx) error {
+		return addToBucket(tx, sessionBucket, []byte(sessionID), []byte(user.Username))
 	})
-
-	if err != nil {
-		return "", err
-	}
-
-	return sessionID, nil
 }
+
 func deleteExistingSession(tx *bolt.Tx, userID string) error {
-	userToSessionBucket := tx.Bucket([]byte(userIDToSessionBucket))
-	if userToSessionBucket == nil {
-		// No existing sessions for this userID
-		return nil
-	}
-	//getting existing session id
-	get := func(tx *bolt.Tx) err{
-		bucket = tx.Bucket([]byte(""))
-		val := bucket.Get([]byte(""))
-		if val == nil{
-			//not found
-			return err.New("No existing session")
-		}
-		fmt.Println(val)
-		return nil
-	}
-	if err :=db.View(get);
-	err != nill{
-		log.Fatal(err)
-	}
-
+	return errors.New("Not Implemented")
 }
-
-//end*******
-
 
 func UserExists(username string) (bool, error) {
-	// Implement this
-	return true, nil
+	isPresent := true
+	return isPresent, DBInstance.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(userBucket))
+		if b == nil {
+			return errors.New("getFromBucket: bucket is nil")
+		}
+		val := b.Get([]byte(username))
+		isPresent = val == nil
+		return nil
+	})
 }
 
-func CreateUser(user *User) error {
+func (user *User) Create() error {
 	// Return error if user is already present
 	exists, err := UserExists(user.Username)
 	if err != nil {
@@ -128,64 +97,45 @@ func CreateUser(user *User) error {
 		return errors.New("CreateUser: User Exists")
 	}
 	return DBInstance.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(userBucket))
 		data, err := json.Marshal(user)
 		if err != nil {
 			return err
 		}
-		if err := b.Put([]byte(user.Username), data); err != nil {
-			return err
-		}
-		return nil
+		return addToBucket(tx, userBucket, []byte(user.Username), data)
 	})
 }
 
-func Authenticate(username, password string) (*User, error) {
-	var user User
+func (user *User) Authenticate() error {
+	var tempUser User
 	err := DBInstance.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(userBucket))
-		val := b.Get([]byte(username))
-		if val == nil {
-			return fmt.Errorf("Authenticate: User not found")
+		val, err := getFromBucket(tx, userBucket, []byte(user.Username))
+		if err != nil {
+			return err
+		}
+		return json.Unmarshal(val, &tempUser)
+	})
+	if err != nil {
+		return err
+	}
+
+	if tempUser.Password != user.Password {
+		return fmt.Errorf("Authenticate: Invalid Password")
+	}
+	user = &tempUser
+	return nil
+}
+
+func (user *User) GetUserFromSessionID() error {
+	if user.SessionID == "" {
+		return errors.New("GetUserFromSessionID: SessionID not given")
+	}
+	return DBInstance.View(func(tx *bolt.Tx) error {
+		val, err := getFromBucket(tx, sessionBucket, []byte(user.SessionID))
+		if err != nil {
+			return err
 		}
 		return json.Unmarshal(val, &user)
 	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	if user.Password != password {
-		return nil, fmt.Errorf("Authenticate: Invalid Password")
-	}
-	
-	err = setSessionID(&user)
-	if err != nil {
-		return nil, fmt.Errorf("Authenticate: SessionID Creation Failed")
-	}
-	return &user, nil
 }
 
-func GetUserFromSessionID(sessionID string) (*User, error) {
-	// TODO: lookup the sesisonID table
-
-	return nil, nil
-}
-
-//for eg
-UserID= "1"
-
-func GetSessionIDFromUser(user *User) (string, error) {
-	// TODO: Implement creation of user's sessionID 
-	
-		sessionID,err := createSession(db, userID)
-		if err !=nil{
-			log.Fatal(err)
-		}
-		fmt.Printf("Created session ID: %s for userID: %s\n", &sessionID,user.UserId)
-
-	// NOTE: One user must have only 1 session ID,
-
-	return "", nil
-}
 

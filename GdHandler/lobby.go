@@ -92,15 +92,6 @@ func (lobby *Lobby) wsHandler(w http.ResponseWriter, r *http.Request) error {
       log.Println("wsHandler: error:", err)
       continue
     }
-
-    log.Printf("wsHandler: Received message: %s\n", message)
-
-    // Optionally send a response message
-    err = conn.WriteMessage(messageType, []byte("Hello from server!"))
-    if err != nil {
-      log.Println("wsHandler: Write error:", err)
-      continue
-    }
   }
   return nil
 }
