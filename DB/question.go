@@ -32,7 +32,7 @@ func (question *Question) Get(id string) error {
   return json.Unmarshal(data, question)
 }
 
-func (question *Question) deleteQuestion() error {
+func (question *Question) Delete() error {
   return QuestionDB.deleteInBucket(questionBucket, []byte(question.QuestionID))
 }
 

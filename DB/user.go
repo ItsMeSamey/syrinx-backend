@@ -88,16 +88,13 @@ func (user *User) Authenticate() error {
 	return nil
 }
 
-func (user *User) GetUserFromSessionID() error {
-	if user.SessionID == "" {
-		return errors.New("GetUserFromSessionID: SessionID not given")
-	}
-
-	val, err := UserDB.getFromBucket(sessionBucket, []byte(user.SessionID))
+func GetUserFromSessionID(SessionID []byte) (*User, error) {
+	val, err := UserDB.getFromBucket(sessionBucket, SessionID)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return json.Unmarshal(val, &user)
+	var user User
+	return &user, json.Unmarshal(val, &user)
 }
 
 
