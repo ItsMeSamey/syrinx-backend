@@ -1,65 +1,43 @@
-package main
-
+package DB
 
 import (
-	"encoding/json"
-    "errors"
-    "log"
-    "net/http"
-    "github.com/boltdb/bolt"
+  "encoding/json"
 )
 
 type Question struct {
-	QuestionID string `json:"questionID"`
-	Question   string `json:"question"`
-	Points     int    `json:"points"`
-	Answer   string `json:"answer"`
-	Hint     string `json:"hint"`
-}
-var db *bolt.DB
-
-func initDB() error {
-    var err error
-    db, err = bolt.Open("questions.db", 0600, nil)
-    if err != nil {
-        return err
-    }
-    return db.Update(func(tx *bolt.Tx) error {
-        _, err := tx.CreateBucketIfNotExists([]byte("Questions"))
-        return err
-    })
+  QuestionID string `json:"questionID"`
+  Question   string `json:"question"`
+  Points   int  `json:"points"`
+  Answer   string `json:"answer"`
+  Hint   string `json:"hint"`
 }
 
-func addQuestion(question Question) error {
-    return db.Update(func(tx *bolt.Tx) error {
-        b := tx.Bucket([]byte("Questions"))
-        encoded, err := json.Marshal(question)
-        if err != nil {
-            return err
-        }
-        return b.Put([]byte(question.QuestionID), encoded)
-    })
+const (
+  questionBucket = "questions"
+)
+
+func (question *Question) Create() error {
+  data, err := json.Marshal(question)
+  if err != nil {
+    return err
+  }
+
+  return QuestionDB.addToBucket(questionBucket, []byte(question.QuestionID), data)
 }
 
-func getQuestion(id string) (*Question, error) {
-    var question Question
-    err := db.View(func(tx *bolt.Tx) error {
-        b := tx.Bucket([]byte("Questions"))
-        data := b.Get([]byte(id))
-        if data == nil {
-            return errors.New("question not found")
-        }
-        return json.Unmarshal(data, &question)
-    })
-    if err != nil {
-        return nil, err
-    }
-    return &question, nil
+func (question *Question) Get(id string) error {
+  data, err := QuestionDB.getFromBucket(questionBucket, []byte(id))
+  if err != nil {
+    return err
+  }
+
+  return json.Unmarshal(data, question)
 }
 
-func deleteQuestion(id string) error {
-    return db.Update(func(tx *bolt.Tx) error {
-        b := tx.Bucket([]byte("Questions"))
-        return b.Delete([]byte(id))
-    })
-}
+// func deleteQuestion(id string) error {
+//   return db.Update(func(tx *bolt.Tx) error {
+//     b := tx.Bucket([]byte("Questions"))
+//     return b.Delete([]byte(id))
+//   })
+// }
+

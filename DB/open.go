@@ -2,33 +2,99 @@ package DB
 
 import (
 	"time"
+	"errors"
 
 	bolt "go.etcd.io/bbolt"
 )
 
-var DBInstance *bolt.DB = nil
+type DBInstance struct {
+	db *bolt.DB
+}
 
-func tryAddBucket(name string) error {
-	return DBInstance.Update(func(tx *bolt.Tx) error {
-			_, err := tx.CreateBucketIfNotExists([]byte(name))
-			return err
+// All the DB declarations
+var (
+	UserDB DBInstance
+	QuestionDB DBInstance
+) 
+
+
+func addToBucketInternal(tx *bolt.Tx, bucket string, key []byte, val []byte) error {
+	b := tx.Bucket([]byte(bucket))
+	if b == nil {
+		return errors.New("addToBucket: bucket is nil")
+	}
+	if err := b.Put(key, val); err != nil {
+		return err
+	}
+	return nil
+}
+func (instance *DBInstance) addToBucket(bucket string, key []byte, val []byte) error {
+	return instance.db.Update(func(tx *bolt.Tx) error {
+		return addToBucketInternal(tx, bucket, key, val)
 	})
 }
 
-func OpenDb(name string) (error) {
-	db, err := bolt.Open(name, 0600, &bolt.Options{Timeout: 1 * time.Second})
-	if err != nil || db == nil {
-		return err
+func getFromBucketInternal(tx *bolt.Tx, bucket string, key []byte) ([]byte, error) {
+	b := tx.Bucket([]byte(bucket))
+	if b == nil {
+		return nil, errors.New("getFromBucket: bucket is nil")
 	}
-	DBInstance = db
+	val := b.Get(key)
+	if val == nil {
+		return nil, errors.New("getFromBucket: key not found")
+	}
+	return val, nil
+}
+func (instance *DBInstance) getFromBucket(bucket string, key []byte) ([]byte, error) {
+	var val []byte
+	err := instance.db.View(func(tx *bolt.Tx) error {
+		var err error = nil
+		val, err = getFromBucketInternal(tx, bucket, key)
+		return err
+	})
+	return val, err
+}
 
-	if err := tryAddBucket(userBucket); err != nil {
-		return err
-	}
-	if err := tryAddBucket(teamBucket); err != nil {
-		return err
-	}
+func (instance *DBInstance) DoesExist(bucket string, key []byte) (bool, error) {
+	isThere := true
+	return isThere, instance.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(userBucket))
+		if b == nil {
+			return errors.New("getFromBucket: bucket is nil")
+		}
+		val := b.Get(key)
+		isThere = val == nil
+		return nil
+	})
+}
 
+func (instance *DBInstance) init(fileName string, buckets []string) error {
+	db_ptr, err := bolt.Open(fileName, 0600, &bolt.Options{Timeout: 1 * time.Second})
+	if err != nil || db_ptr == nil {
+		return err
+	}
+	instance.db = db_ptr
+
+	return instance.db.Update(func(tx *bolt.Tx) error {
+		for _, name := range buckets {
+			if _, err := tx.CreateBucketIfNotExists([]byte(name)); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func InitDB() error {
+	err := UserDB.init("2024_ctf_users.db", []string{userBucket, teamBucket, sessionBucket})
+	if err != nil {
+		return err
+	}
+	err = QuestionDB.init("2024_ctf_questions.db", []string{questionBucket})
+	if err != nil {
+		return err
+	}
 	return nil
 }
+
 

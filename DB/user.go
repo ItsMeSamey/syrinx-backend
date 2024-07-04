@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
-	bolt "go.etcd.io/bbolt"
 )
 
 const (
@@ -34,48 +32,9 @@ func genSessionID() (string, error) {
 	return base64.URLEncoding.EncodeToString(bytes), nil
 }
 
-func addToBucket(tx *bolt.Tx, bucket string, key []byte, val []byte) error {
-	b := tx.Bucket([]byte(bucket))
-	if b == nil {
-		return errors.New("addToBucket: bucket is nil")
-	}
-	if err := b.Put(key, val); err != nil {
-		return err
-	}
-	return nil
-}
-func getFromBucket(tx *bolt.Tx, bucket string, key []byte) ([]byte, error) {
-	b := tx.Bucket([]byte(bucket))
-	if b == nil {
-		return nil, errors.New("getFromBucket: bucket is nil")
-	}
-	val := b.Get(key)
-	if val == nil {
-		return nil, fmt.Errorf("getFromBucket: key not found")
-	}
-	return val, nil
-}
-
-func DoesExist(bucket string, key []byte) (bool, error) {
-	isThere := true
-	return isThere, DBInstance.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(userBucket))
-		if b == nil {
-			return errors.New("getFromBucket: bucket is nil")
-		}
-		val := b.Get(key)
-		isThere = val == nil
-		return nil
-	})
-}
-
-func UserExists(username string) (bool, error) {
-	return DoesExist(userBucket, []byte(username))
-}
-
 func (user *User) Create() error {
 	// Return error if user is already present
-	exists, err := UserExists(user.Username)
+	exists, err := UserDB.DoesExist(userBucket, []byte(user.Username))
 	if err != nil {
 		return err
 	}
@@ -90,7 +49,7 @@ start:
 		return err
 	}
 
-	exists, err = DoesExist(sessionBucket, []byte(sessionID))
+	exists, err = UserDB.DoesExist(sessionBucket, []byte(sessionID))
 	if err != nil {
 		return err
 	}
@@ -102,24 +61,22 @@ start:
 		goto start
 	}
 
-	return DBInstance.Update(func(tx *bolt.Tx) error {
-		data, err := json.Marshal(user)
-		if err != nil {
-			return err
-		}
-		return addToBucket(tx, userBucket, []byte(user.Username), data)
-	})
+	data, err := json.Marshal(user)
+	if err != nil {
+		return err
+	}
+
+	return UserDB.addToBucket(userBucket, []byte(user.Username), data)
 }
 
 func (user *User) Authenticate() error {
 	var tempUser User
-	err := DBInstance.View(func(tx *bolt.Tx) error {
-		val, err := getFromBucket(tx, userBucket, []byte(user.Username))
-		if err != nil {
-			return err
-		}
-		return json.Unmarshal(val, &tempUser)
-	})
+	val, err := UserDB.getFromBucket(userBucket, []byte(user.Username))
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(val, &tempUser)
 	if err != nil {
 		return err
 	}
@@ -135,13 +92,12 @@ func (user *User) GetUserFromSessionID() error {
 	if user.SessionID == "" {
 		return errors.New("GetUserFromSessionID: SessionID not given")
 	}
-	return DBInstance.View(func(tx *bolt.Tx) error {
-		val, err := getFromBucket(tx, sessionBucket, []byte(user.SessionID))
-		if err != nil {
-			return err
-		}
-		return json.Unmarshal(val, &user)
-	})
+
+	val, err := UserDB.getFromBucket(sessionBucket, []byte(user.SessionID))
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(val, &user)
 }
 
 
