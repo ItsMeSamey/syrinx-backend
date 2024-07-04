@@ -21,7 +21,7 @@ var (
 func addToBucketInternal(tx *bolt.Tx, bucket string, key []byte, val []byte) error {
 	b := tx.Bucket([]byte(bucket))
 	if b == nil {
-		return errors.New("addToBucket: bucket is nil")
+		return errors.New("addToBucketInternal: bucket is nil")
 	}
 	if err := b.Put(key, val); err != nil {
 		return err
@@ -37,11 +37,11 @@ func (instance *DBInstance) addToBucket(bucket string, key []byte, val []byte) e
 func getFromBucketInternal(tx *bolt.Tx, bucket string, key []byte) ([]byte, error) {
 	b := tx.Bucket([]byte(bucket))
 	if b == nil {
-		return nil, errors.New("getFromBucket: bucket is nil")
+		return nil, errors.New("getFromBucketInternal: bucket is nil")
 	}
 	val := b.Get(key)
 	if val == nil {
-		return nil, errors.New("getFromBucket: key not found")
+		return nil, errors.New("getFromBucketInternal: key not found")
 	}
 	return val, nil
 }
@@ -55,12 +55,25 @@ func (instance *DBInstance) getFromBucket(bucket string, key []byte) ([]byte, er
 	return val, err
 }
 
+func deleteInBucketInternal(tx *bolt.Tx, bucket string, key []byte) error {
+	b := tx.Bucket([]byte("Questions"))
+	if b == nil {
+		return errors.New("deleteInBucketInternal: bucket is nil")
+	}
+  return b.Delete(key)
+}
+func (instance *DBInstance) deleteInBucket(bucket string, key []byte) error {
+  return instance.db.Update(func(tx *bolt.Tx) error {
+    return deleteInBucketInternal(tx, bucket, key)
+  })
+}
+
 func (instance *DBInstance) DoesExist(bucket string, key []byte) (bool, error) {
 	isThere := true
 	return isThere, instance.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(userBucket))
 		if b == nil {
-			return errors.New("getFromBucket: bucket is nil")
+			return errors.New("DoesExist: bucket is nil")
 		}
 		val := b.Get(key)
 		isThere = val == nil
