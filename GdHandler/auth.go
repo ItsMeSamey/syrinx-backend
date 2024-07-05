@@ -19,8 +19,8 @@ func (lobby *Lobby) getUserAuth(messageType int, message []byte) (*DB.User, erro
 		return nil, errors.New("getUserAuth: Invalid messageType")
 	}
 	data := message[1:]
-	var user *DB.User
-	var err error
+	var user *DB.User = nil
+	var err error = nil
 	if message[0] == '0' {
 		user, err = DB.UserFromSessionID(data)
 	} else if message[0] == '1' {
@@ -33,6 +33,9 @@ func (lobby *Lobby) getUserAuth(messageType int, message []byte) (*DB.User, erro
 	} else {
 		return nil, errors.New("getUserAuth: spec violation")
 	}
+	if err != nil {
+		return nil, err
+	}
 
 	has, err := user.UserInLobby(lobby.ID)
 	if err != nil {
@@ -41,6 +44,6 @@ func (lobby *Lobby) getUserAuth(messageType int, message []byte) (*DB.User, erro
 	if has != true {
 		return nil, errors.New("getUserAuth: Policy Violation")
 	}
-	return user, err
+	return user, nil
 }
 

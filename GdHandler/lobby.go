@@ -68,7 +68,7 @@ func (lobby *Lobby) wsHandler(w http.ResponseWriter, r *http.Request) error {
       conn.Close()
       break
     }
-    user, err = getUserAuth(messageType, message)
+    user, err = lobby.getUserAuth(messageType, message)
     if err == nil && user != nil {
       _ = conn.WriteMessage(messageType, []byte("0Success"))
     } else {

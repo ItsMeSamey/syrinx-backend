@@ -1,9 +1,11 @@
 package DB
 
 import (
-  "time"
   "errors"
-
+  "log"
+  "sync"
+  "time"
+  
   bolt "go.etcd.io/bbolt"
 )
 
@@ -14,6 +16,7 @@ type DBInstance struct {
 // All the DB declarations
 var (
   UserDB DBInstance
+  LobbyDB DBInstance
   QuestionDB DBInstance
 ) 
 
@@ -68,6 +71,31 @@ func (instance *DBInstance) deleteInBucket(bucket string, key []byte) error {
   })
 }
 
+/// fn msut do everything syncronosly
+func (instance *DBInstance) forEachInBucket(bucket string, fn func (key, val []byte) error) error {
+  var wg sync.WaitGroup
+  err := instance.db.View(func (tx *bolt.Tx) error {
+    b := tx.Bucket([]byte(bucket))
+    if b == nil {
+      return errors.New("forEachInBucket: bucket is nil")
+    }
+    cursor := b.Cursor()
+    for k, v := cursor.First(); k != nil; k, v = cursor.Next() {
+      wg.Add(1)
+      go (func() {
+        err := fn(k, v)
+        if err != nil {
+          log.Println(err.Error())
+        }
+        wg.Done()
+      })()
+    }
+    return nil
+  })
+  wg.Wait()
+  return err
+}
+
 func (instance *DBInstance) DoesExist(bucket string, key []byte) (bool, error) {
   isThere := true
   return isThere, instance.db.View(func(tx *bolt.Tx) error {
@@ -100,6 +128,10 @@ func (instance *DBInstance) init(fileName string, buckets []string) error {
 
 func InitDB() error {
   err := UserDB.init("2024_ctf_users.db", []string{userBucket, teamBucket, sessionBucket})
+  if err != nil {
+    return err
+  }
+  err = LobbyDB.init("2024_ctf_lobbies.db", []string{questionBucket})
   if err != nil {
     return err
   }
