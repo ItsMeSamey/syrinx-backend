@@ -96,4 +96,7 @@ func UserFromSessionID(SessionID []byte) (*User, error) {
 	return &user, json.Unmarshal(val, &user)
 }
 
-
+func (user *User) UserInLobby(lobbyID int) (bool, error) {
+	// Implement
+	return false, nil
+}

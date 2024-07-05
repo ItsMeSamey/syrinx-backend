@@ -18,6 +18,7 @@ type Players struct {
 }
 
 type Lobby struct {
+  ID int
   players []Players
   dataPool []byte
   dataMutex sync.Mutex
@@ -27,6 +28,7 @@ type Lobby struct {
 
 func MakeLobby(lobbyID int) *Lobby {
   return &Lobby {
+    ID: lobbyID,
     players: make([]Players, 0, 32),
     dataPool: make([]byte, 0, 1024),
     dataMutex: sync.Mutex{},
@@ -53,10 +55,27 @@ func (lobby *Lobby) wsHandler(w http.ResponseWriter, r *http.Request) error {
     log.Print("wsHandler: Upgrade error:", err)
     return err
   }
+  defer conn.Close()
 
   var user *DB.User = nil
-
-  defer conn.Close()
+  for user == nil {
+    messageType, message, err := conn.ReadMessage()
+    if err != nil {
+      log.Println("wsHandler: Read error:", err)
+      continue
+    }
+    if messageType == websocket.CloseMessage {
+      conn.Close()
+      break
+    }
+    user, err = getUserAuth(messageType, message)
+    if err == nil && user != nil {
+      _ = conn.WriteMessage(messageType, []byte("0Success"))
+    } else {
+      _ = conn.WriteMessage(messageType, []byte("1Authentication Error"))
+    }
+    continue
+  }
 
   for {
     messageType, message, err := conn.ReadMessage()
@@ -68,22 +87,11 @@ func (lobby *Lobby) wsHandler(w http.ResponseWriter, r *http.Request) error {
       conn.Close()
       break
     }
-    if user == nil {
-      user, err = getUserAuth(messageType, message)
-      if err == nil {
-        _ = conn.WriteMessage(messageType, []byte("0Success"))
-      } else {
-        _ = conn.WriteMessage(messageType, []byte("1Authentication Error"))
-      }
-      continue
-    }
 
+    // If handlers are made async, programme will eventually lock up on slow pc's
     if messageType == websocket.TextMessage {
       err = lobby.handleTextMessage(message)
     } else if messageType == websocket.BinaryMessage{
-      // Consider making this async
-      // This may lead to partially unmerged packets as batching may happen before
-      // merging is completed by all of the players, but is that even a problem?
       lobby.handleBinaryMessage(message)
     } else {
       err = errors.New("wsHandler: Invalid messageType: " + strconv.Itoa(messageType))
@@ -93,6 +101,8 @@ func (lobby *Lobby) wsHandler(w http.ResponseWriter, r *http.Request) error {
       continue
     }
   }
+
+  // Remove the user from the lobby and `players` before exit
   return nil
 }
 
