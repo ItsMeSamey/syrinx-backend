@@ -3,23 +3,9 @@ package DB
 import (
   "errors"
   "log"
-  "sync"
-  "time"
   
   bolt "go.etcd.io/bbolt"
 )
-
-type DBInstance struct {
-  db *bolt.DB
-}
-
-// All the DB declarations
-var (
-  UserDB DBInstance
-  LobbyDB DBInstance
-  QuestionDB DBInstance
-) 
-
 
 func addToBucketInternal(tx *bolt.Tx, bucket string, key []byte, val []byte) error {
   b := tx.Bucket([]byte(bucket))
@@ -73,27 +59,19 @@ func (instance *DBInstance) deleteInBucket(bucket string, key []byte) error {
 
 /// fn msut do everything syncronosly
 func (instance *DBInstance) forEachInBucket(bucket string, fn func (key, val []byte) error) error {
-  var wg sync.WaitGroup
-  err := instance.db.View(func (tx *bolt.Tx) error {
+  return instance.db.View(func (tx *bolt.Tx) error {
     b := tx.Bucket([]byte(bucket))
     if b == nil {
       return errors.New("forEachInBucket: bucket is nil")
     }
     cursor := b.Cursor()
     for k, v := cursor.First(); k != nil; k, v = cursor.Next() {
-      wg.Add(1)
-      go (func() {
-        err := fn(k, v)
-        if err != nil {
-          log.Println(err.Error())
-        }
-        wg.Done()
-      })()
+      if err := fn(k, v); err != nil {
+        log.Println(err.Error())
+      }
     }
     return nil
   })
-  wg.Wait()
-  return err
 }
 
 func (instance *DBInstance) DoesExist(bucket string, key []byte) (bool, error) {
@@ -108,38 +86,4 @@ func (instance *DBInstance) DoesExist(bucket string, key []byte) (bool, error) {
     return nil
   })
 }
-
-func (instance *DBInstance) init(fileName string, buckets []string) error {
-  db_ptr, err := bolt.Open(fileName, 0600, &bolt.Options{Timeout: 1 * time.Second})
-  if err != nil || db_ptr == nil {
-    return err
-  }
-  instance.db = db_ptr
-
-  return instance.db.Update(func(tx *bolt.Tx) error {
-    for _, name := range buckets {
-      if _, err := tx.CreateBucketIfNotExists([]byte(name)); err != nil {
-        return err
-      }
-    }
-    return nil
-  })
-}
-
-func InitDB() error {
-  err := UserDB.init("2024_ctf_users.db", []string{userBucket, teamBucket, sessionBucket})
-  if err != nil {
-    return err
-  }
-  err = LobbyDB.init("2024_ctf_lobbies.db", []string{questionBucket})
-  if err != nil {
-    return err
-  }
-  err = QuestionDB.init("2024_ctf_questions.db", []string{questionBucket})
-  if err != nil {
-    return err
-  }
-  return nil
-}
-
 

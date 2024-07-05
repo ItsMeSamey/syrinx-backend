@@ -3,12 +3,12 @@ package GdHandler
 import (
   "errors"
   "log"
-  "net/http"
   "strconv"
   "sync"
 
   "ccs.ctf/DB"
 
+  "github.com/gin-gonic/gin"
   "github.com/gorilla/websocket"
 )
 
@@ -49,8 +49,8 @@ func (lobby *Lobby) handleBinaryMessage(message []byte) {
   lobby.dataPool = append(lobby.dataPool, message...)
 }
 
-func (lobby *Lobby) wsHandler(w http.ResponseWriter, r *http.Request) error {
-  conn, err := lobby.upgrader.Upgrade(w, r, nil)
+func (lobby *Lobby) wsHandler(gc *gin.Context) error {
+  conn, err := lobby.upgrader.Upgrade(gc.Writer, gc.Request, nil)
   if err != nil {
     log.Print("wsHandler: Upgrade error:", err)
     return err
