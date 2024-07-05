@@ -57,7 +57,7 @@ func (instance *DBInstance) deleteInBucket(bucket string, key []byte) error {
   })
 }
 
-/// fn msut do everything syncronosly
+/// does everything syncronosly
 func (instance *DBInstance) forEachInBucket(bucket string, fn func (key, val []byte) error) error {
   return instance.db.View(func (tx *bolt.Tx) error {
     b := tx.Bucket([]byte(bucket))

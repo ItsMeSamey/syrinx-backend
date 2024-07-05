@@ -6,30 +6,23 @@ import (
   "strconv"
   "sync"
 
-  "ccs.ctf/DB"
-
   "github.com/gin-gonic/gin"
   "github.com/gorilla/websocket"
 )
 
-type Players struct {
-  DB.User
-  conn *websocket.Conn
-}
-
 type Lobby struct {
-  ID int
-  players []Players
+  lobbyID int
+  players []*Player
   dataPool []byte
   dataMutex sync.Mutex
   playerMutex sync.Mutex
   upgrader websocket.Upgrader
 }
 
-func MakeLobby(lobbyID int) *Lobby {
+func makeLobby(lobbyID int) *Lobby {
   return &Lobby {
-    ID: lobbyID,
-    players: make([]Players, 0, 32),
+    lobbyID: lobbyID,
+    players: make([]*Player, 0, 32),
     dataPool: make([]byte, 0, 1024),
     dataMutex: sync.Mutex{},
     playerMutex: sync.Mutex{},
@@ -49,16 +42,16 @@ func (lobby *Lobby) handleBinaryMessage(message []byte) {
   lobby.dataPool = append(lobby.dataPool, message...)
 }
 
-func (lobby *Lobby) wsHandler(gc *gin.Context) error {
+func (lobby *Lobby) wsHandler(gc *gin.Context, index int) {
   conn, err := lobby.upgrader.Upgrade(gc.Writer, gc.Request, nil)
   if err != nil {
     log.Print("wsHandler: Upgrade error:", err)
-    return err
   }
   defer conn.Close()
 
-  var user *DB.User = nil
-  for user == nil {
+  myself := lobby.players[index]
+  myself.conn = conn
+  for myself.user == nil {
     messageType, message, err := conn.ReadMessage()
     if err != nil {
       log.Println("wsHandler: Read error:", err)
@@ -68,8 +61,8 @@ func (lobby *Lobby) wsHandler(gc *gin.Context) error {
       conn.Close()
       break
     }
-    user, err = lobby.getUserAuth(messageType, message)
-    if err == nil && user != nil {
+    myself.user, err = lobby.getUserAuth(messageType, message)
+    if err == nil && myself.user != nil {
       _ = conn.WriteMessage(messageType, []byte("0Success"))
     } else {
       _ = conn.WriteMessage(messageType, []byte("1Authentication Error"))
@@ -102,26 +95,13 @@ func (lobby *Lobby) wsHandler(gc *gin.Context) error {
     }
   }
 
-  // Remove the user from the lobby and `players` before exit
-  return nil
-}
-
-func (lobby *Lobby) Syncronizer() {
-  lobby.dataMutex.Lock()
-  defer lobby.dataMutex.Unlock()
   lobby.playerMutex.Lock()
   defer lobby.playerMutex.Unlock()
-
-  var wg sync.WaitGroup
-  wg.Add(len(lobby.players))
-  for _, i := range lobby.players {
-    go (func ()  {
-      // HACK: Donot discard the error try again
-      // FIXME: Set a timeout to prevent a deadlock (maybe using context)
-      _ = i.conn.WriteMessage(websocket.BinaryMessage, lobby.dataPool)
-      wg.Done()
-    })()
-  }
-  wg.Wait()
+  if len(lobby.players) == 1 {
+    lobby.players = nil
+    return
+  } 
+  lobby.players = append(lobby.players[:index], lobby.players[index+1:]...)
+  return
 }
 

@@ -42,7 +42,7 @@ func (user *User) Create() error {
 	}
 
 	tries := 0
-start:
+genSessionID:
 	sessionID, err := genSessionID()
 	if err != nil {
 		return err
@@ -55,9 +55,9 @@ start:
 	if exists {
 		tries += 1
 		if tries > 1024*1024 {
-			return errors.New("User.Create: 418 I'm A Teapot")
+			return errors.New("User.Create: I'm A Teapot")
 		}
-		goto start
+		goto genSessionID
 	}
 
 	data, err := json.Marshal(user)
