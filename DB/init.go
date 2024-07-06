@@ -3,7 +3,9 @@ package DB
 import (
   "context"
   "log"
+  "errors"
 
+  "go.mongodb.org/mongo-driver/bson"
   "go.mongodb.org/mongo-driver/mongo"
   "go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -41,4 +43,26 @@ func InitDB(uri string) error {
   return nil
 }
 
+func (db *Collection) get(k, v string, out any) error {
+  result := db.coll.FindOne(UserDB.context, bson.D{{k, v}})
+  if result == nil {
+    return errors.New("get: got a nil result")
+  }
+  if err := result.Err(); err != nil {
+    return err
+  }
+  return result.Decode(out)
+}
+
+func (db *Collection) exists(k, v string) (bool, error) {
+  result := UserDB.coll.FindOne(UserDB.context, bson.D{{k, v}})
+  if result == nil {
+    return false, errors.New("exists: got a nil result")
+  }
+  err := result.Err()
+  if err == mongo.ErrNoDocuments {
+    return false, nil
+  }
+  return err == nil, err
+}
 

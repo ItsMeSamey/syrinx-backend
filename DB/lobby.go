@@ -9,14 +9,21 @@ type Lobby struct {
   Teams []string `bson:"teams"`
 }
 
-func UserInLobby(id []byte) (bool, error) {
-  return LobbyDB.DoesExist(lobbyBucket, id)
+func UserInLobby(_id string) (bool, error) {
+  return LobbyDB.exists("_id", _id)
 }
 
-func (lobby *Lobby) HasUser(username string) (bool, error) {
-  // Implement
+func HasUser(lobbyID, userID string) (bool, error) {
+  var lobby Lobby
+  err := LobbyDB.get("_id", lobbyID, &lobby)
+  if err != nil {
+    return false, err
+  }
+  for _, id := range lobby.Teams {
+    if userID == id {
+      return true, nil
+    }
+  }
   return false, nil
 }
-
-
 
