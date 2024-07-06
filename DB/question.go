@@ -4,7 +4,7 @@ import (
 )
 
 type Question struct {
-  QuestionID string `bson:"questionID"`
+  ID         string `bson:"_id,omitempty"`
   Question   string `bson:"question"`
   Points     int    `bson:"points"`
   Answer     string `bson:"answer"`

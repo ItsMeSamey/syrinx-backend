@@ -1,7 +1,6 @@
 package DB
 
 import (
-
 )
 
 type Lobby struct {
@@ -9,11 +8,7 @@ type Lobby struct {
   Teams []string `bson:"teams"`
 }
 
-func UserInLobby(_id string) (bool, error) {
-  return LobbyDB.exists("_id", _id)
-}
-
-func HasUser(lobbyID, userID string) (bool, error) {
+func UserInLobby(lobbyID, userID string) (bool, error) {
   var lobby Lobby
   err := LobbyDB.get("_id", lobbyID, &lobby)
   if err != nil {

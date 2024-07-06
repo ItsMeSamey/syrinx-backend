@@ -10,20 +10,26 @@ import (
   "go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var DATABASE *mongo.Database
-
 type Collection struct {
   coll *mongo.Collection
   context context.Context
 }
 
-// All the DB declarations
+/// Type declaration used for session key
+type SessID *[64]byte
+
+/// The main Database
+var DATABASE *mongo.Database
+
+/// All the DB declarations
 var (
   UserDB Collection
   QuestionDB Collection
   LobbyDB Collection
 ) 
 
+/// Initialize all Database's
+/// Programme MUST panic if this function errors as this is unrecoverable
 func InitDB(uri string) error {
   ctx := context.Background()
   client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
@@ -43,7 +49,9 @@ func InitDB(uri string) error {
   return nil
 }
 
-func (db *Collection) get(k, v string, out any) error {
+/// Get the result of a db quarry in a `out` object
+/// NOTE: `out` must be a pointer or Programme will panic !
+func (db *Collection) get(k string, v any, out any) error {
   result := db.coll.FindOne(UserDB.context, bson.D{{k, v}})
   if result == nil {
     return errors.New("get: got a nil result")
@@ -54,6 +62,7 @@ func (db *Collection) get(k, v string, out any) error {
   return result.Decode(out)
 }
 
+/// Check if a entry exists in a Collection
 func (db *Collection) exists(k, v string) (bool, error) {
   result := UserDB.coll.FindOne(UserDB.context, bson.D{{k, v}})
   if result == nil {

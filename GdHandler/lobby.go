@@ -11,7 +11,7 @@ import (
 )
 
 type Lobby struct {
-  lobbyID int
+  ID      string
   players []*Player
   dataPool []byte
   dataMutex sync.Mutex
@@ -19,9 +19,9 @@ type Lobby struct {
   upgrader websocket.Upgrader
 }
 
-func makeLobby(lobbyID int) *Lobby {
+func makeLobby(ID string) *Lobby {
   return &Lobby {
-    lobbyID: lobbyID,
+    ID: ID,
     players: make([]*Player, 0, 32),
     dataPool: make([]byte, 0, 1024),
     dataMutex: sync.Mutex{},
@@ -50,8 +50,8 @@ func (lobby *Lobby) wsHandler(gc *gin.Context, index int) {
   defer conn.Close()
 
   myself := lobby.players[index]
-  myself.conn = conn
-  for myself.user == nil {
+  myself.WS = conn
+  for myself.ID == "" {
     messageType, message, err := conn.ReadMessage()
     if err != nil {
       log.Println("wsHandler: Read error:", err)
@@ -61,8 +61,8 @@ func (lobby *Lobby) wsHandler(gc *gin.Context, index int) {
       conn.Close()
       break
     }
-    myself.user, err = lobby.getUserAuth(messageType, message)
-    if err == nil && myself.user != nil {
+    myself.ID, err = lobby.getUserAuth(messageType, message)
+    if err == nil && myself.ID != "" {
       _ = conn.WriteMessage(messageType, []byte("0Success"))
     } else {
       _ = conn.WriteMessage(messageType, []byte("1Authentication Error"))

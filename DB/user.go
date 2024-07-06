@@ -1,6 +1,7 @@
 package DB
 
 import (
+	"crypto/rand"
 	"errors"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -8,38 +9,54 @@ import (
 
 // User struct to store user information
 type User struct {
+	ID        string `bson:"_id,omitempty"`
 	Username  string `bson:"user"`
 	Email     string `bson:"mail"`
 	Password  string `bson:"pass"`
 	TeamID    string `bson:"teamID"`
 	DiscordID string `bson:"discordID"`
+	SessionID SessID `bson:"SessionID"`
 }
 
-// func genSessionID() (string, error) {
-// 	bytes := make([]byte, 6*16)
-// 	if _, err := rand.Read(bytes); 
-// 	err != nil {
-// 		return "", err
-// 	}
-// 	return base64.URLEncoding.EncodeToString(bytes), nil
-// }
+func genSessionID() (SessID, error) {
+	bytes := make([]byte, 6*64)
+	_, err := rand.Read(bytes)
+	ID := SessID(bytes)
+	if ID == nil {
+		return nil, errors.New("genSessionID: ID generation failed")
+	}
+	return ID, err
+}
 
-func CreateUser(user *User) error {
+func CreateUser(user *User) (SessID, error) {
+	if user.ID != "" {
+		return nil, errors.New("CreateUser: ID cannot be set")
+	}
+	if user.SessionID != nil {
+		return nil, errors.New("CreateUser: SessionID cannot be set")
+	}
+
+	ID, err := genSessionID()
+	if err != nil {
+		return nil, err
+	}
+
+	user.SessionID = ID
+
 	exists, err := UserDB.exists("user", user.Username)
 	if exists {
-		return errors.New("CreateUser: User exists")
+		return nil, errors.New("CreateUser: User exists")
 	}
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	result, err := UserDB.coll.InsertOne(UserDB.context, *user)
-	_ = result
-	
+	_, err = UserDB.coll.InsertOne(UserDB.context, *user)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+
+	return ID, nil
 }
 
 func UserAuthenticate(username, password string) (*User, error) {
@@ -55,8 +72,8 @@ func UserAuthenticate(username, password string) (*User, error) {
 	return &user, err
 }
 
-func UserFromSessionID(_id string) (*User, error) {
+func UserFromSessionID(SessionID SessID) (*User, error) {
 	var user User
-	return &user, UserDB.get("_id", _id, &user)
+	return &user, UserDB.get("SessionID", SessionID, &user)
 }
 

@@ -20,9 +20,11 @@ func main() {
 	}
 
 	// Create a new user
-	err = DB.CreateUser(&DB.User{"a", "mail", "pass", "team id", "discord",})
+	id, err := DB.CreateUser(&DB.User{"", "a", "mail", "pass", "team id", "discord", nil})
 	if err != nil {
 		fmt.Println("Error creating user:", err)
+	} else {
+		fmt.Println("ID:", id)
 	}
 
 	user, err := DB.UserAuthenticate("a", "pass")
