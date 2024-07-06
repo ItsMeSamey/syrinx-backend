@@ -1,16 +1,16 @@
 package GdHandler
 
 import (
-	"errors"
-	"net/http"
-	"strconv"
-	"sync"
-	"time"
-
-	"ccs.ctf/DB"
-
-	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
+  "errors"
+  "net/http"
+  "strconv"
+  "sync"
+  "time"
+  
+  "ccs.ctf/DB"
+  
+  "github.com/gin-gonic/gin"
+  "github.com/gorilla/websocket"
 )
 
 var Lobbies map[int]*Lobby = make(map[int]*Lobby)
@@ -71,3 +71,4 @@ start:
   time.Sleep(50*time.Millisecond)
   goto start
 }
+

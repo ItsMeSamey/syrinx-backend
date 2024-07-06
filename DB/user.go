@@ -1,97 +1,74 @@
 package DB
 
 import (
-	"crypto/rand"
-	"encoding/base64"
-	"encoding/json"
 	"errors"
-	"fmt"
-)
 
-const (
-	userBucket = "users"
-	sessionBucket = "sessions"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // User struct to store user information
 type User struct {
-	Username  string `json:"user"`
-	Password  string `json:"pass"`
-	UserId    int    `json:"userID"`
-	TeamID    int    `json:"teamID"`
-	SessionID string `json:"sesisonID"`
+	Username  string `bson:"user"`
+	Password  string `bson:"pass"`
+	TeamID    int    `bson:"teamID"`
+	DiscordID string `bson:"discordID"`
 }
 
-func genSessionID() (string, error) {
-	bytes := make([]byte, 6*16)
-	if _, err := rand.Read(bytes); 
-	err != nil {
-		return "", err
-	}
-	return base64.URLEncoding.EncodeToString(bytes), nil
-}
+// func genSessionID() (string, error) {
+// 	bytes := make([]byte, 6*16)
+// 	if _, err := rand.Read(bytes); 
+// 	err != nil {
+// 		return "", err
+// 	}
+// 	return base64.URLEncoding.EncodeToString(bytes), nil
+// }
 
-func (user *User) Create() error {
-	// Return error if user is already present
-	exists, err := UserDB.DoesExist(userBucket, []byte(user.Username))
-	if err != nil {
-		return err
+func CreateUser(user *User) error {
+	result := UserDB.coll.FindOne(UserDB.context, bson.D{{"user", user.Username}})
+	if result == nil {
+		return errors.New("CreateUser: Result is `nil`")
 	}
-	if exists {
-		return errors.New("User.Create: User Exists")
+	err := result.Err()
+	if err == nil {
+		return errors.New("CreateUser: User exists")
 	}
-
-	tries := 0
-genSessionID:
-	sessionID, err := genSessionID()
-	if err != nil {
+	if err != mongo.ErrNoDocuments {
 		return err
 	}
 
-	exists, err = UserDB.DoesExist(sessionBucket, []byte(sessionID))
+	insert, err := UserDB.coll.InsertOne(UserDB.context, *user)
+	_ = insert
+	
 	if err != nil {
 		return err
 	}
-	if exists {
-		tries += 1
-		if tries > 1024*1024 {
-			return errors.New("User.Create: I'm A Teapot")
-		}
-		goto genSessionID
-	}
-
-	data, err := json.Marshal(user)
-	if err != nil {
-		return err
-	}
-
-	return UserDB.addToBucket(userBucket, []byte(user.Username), data)
+	return nil
 }
 
 func UserAuthenticate(username, password string) (*User, error) {
 	var user User
-	val, err := UserDB.getFromBucket(userBucket, []byte(username))
+	result := UserDB.coll.FindOne(UserDB.context, bson.D{{"user", username}, {"pass", password}})
+	if result == nil {
+		return nil, errors.New("UserAuthenticate: Invalid Password")
+	}
+	err := result.Decode(user)
 	if err != nil {
 		return nil, err
 	}
-
-	err = json.Unmarshal(val, &user)
-	if err != nil {
-		return nil, err
-	}
-
-	if user.Password != password {
-		return nil, fmt.Errorf("UserAuthenticate: Invalid Password")
-	}
-	return &user, nil
+	return &user, err
 }
 
-func UserFromSessionID(SessionID []byte) (*User, error) {
-	val, err := UserDB.getFromBucket(sessionBucket, SessionID)
+func UserFromSessionID(_id string) (*User, error) {
+	var user User
+	result := UserDB.coll.FindOne(UserDB.context, bson.D{{"_id", _id}})
+	if result == nil {
+		return nil, errors.New("UserFromSessionID: Token")
+	}
+	err := result.Decode(user)
 	if err != nil {
 		return nil, err
 	}
-	var user User
-	return &user, json.Unmarshal(val, &user)
+	return &user, err
 }
 

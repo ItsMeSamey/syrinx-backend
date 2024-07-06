@@ -97,8 +97,8 @@ func (lobby *Lobby) wsHandler(gc *gin.Context, index int) {
 
   lobby.playerMutex.Lock()
   defer lobby.playerMutex.Unlock()
-  if len(lobby.players) == 1 {
-    lobby.players = nil
+  if len(lobby.players) == index+1 {
+    lobby.players = lobby.players[:index-1]
     return
   } 
   lobby.players = append(lobby.players[:index], lobby.players[index+1:]...)

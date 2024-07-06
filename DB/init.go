@@ -1,53 +1,41 @@
 package DB
 
 import (
-  "time"
+  "context"
+  "log"
 
-  bolt "go.etcd.io/bbolt"
+  "go.mongodb.org/mongo-driver/mongo"
+  "go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type DBInstance struct {
-  db *bolt.DB
+var DATABASE *mongo.Database
+
+type Collection struct {
+  coll *mongo.Collection
+  context context.Context
 }
 
 // All the DB declarations
 var (
-  UserDB DBInstance
-  LobbyDB DBInstance
-  QuestionDB DBInstance
+  UserDB Collection
+  QuestionDB Collection
 ) 
 
-
-func (instance *DBInstance) init(fileName string, buckets []string) error {
-  db_ptr, err := bolt.Open(fileName, 0600, &bolt.Options{Timeout: 1 * time.Second})
-  if err != nil || db_ptr == nil {
-    return err
-  }
-  instance.db = db_ptr
-
-  return instance.db.Update(func(tx *bolt.Tx) error {
-    for _, name := range buckets {
-      if _, err := tx.CreateBucketIfNotExists([]byte(name)); err != nil {
-        return err
-      }
-    }
-    return nil
-  })
-}
-
-func InitDB() error {
-  err := UserDB.init("2024_ctf_users.db", []string{userBucket, teamBucket, sessionBucket})
+func InitDB(uri string) error {
+  ctx := context.Background()
+  client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
   if err != nil {
     return err
   }
-  err = LobbyDB.init("2024_ctf_lobbies.db", []string{questionBucket})
+  err = client.Ping(ctx, nil)
   if err != nil {
     return err
   }
-  err = QuestionDB.init("2024_ctf_questions.db", []string{questionBucket})
-  if err != nil {
-    return err
-  }
+  log.Println("Successfully Connected to MongoDB")
+
+  DATABASE = client.Database("2024_ctf")
+  UserDB = Collection{DATABASE.Collection("users"), context.TODO()}
+  QuestionDB = Collection{DATABASE.Collection("questions"), context.TODO()}
   return nil
 }
 
