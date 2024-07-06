@@ -19,6 +19,7 @@ type Collection struct {
 var (
   UserDB Collection
   QuestionDB Collection
+  LobbyDB Collection
 ) 
 
 func InitDB(uri string) error {
@@ -36,6 +37,7 @@ func InitDB(uri string) error {
   DATABASE = client.Database("2024_ctf")
   UserDB = Collection{DATABASE.Collection("users"), context.TODO()}
   QuestionDB = Collection{DATABASE.Collection("questions"), context.TODO()}
+  LobbyDB = Collection{DATABASE.Collection("lobby"), context.TODO()}
   return nil
 }
 

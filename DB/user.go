@@ -10,8 +10,9 @@ import (
 // User struct to store user information
 type User struct {
 	Username  string `bson:"user"`
+	Email     string `bson:"mail"`
 	Password  string `bson:"pass"`
-	TeamID    int    `bson:"teamID"`
+	TeamID    string `bson:"teamID"`
 	DiscordID string `bson:"discordID"`
 }
 
@@ -52,7 +53,7 @@ func UserAuthenticate(username, password string) (*User, error) {
 	if result == nil {
 		return nil, errors.New("UserAuthenticate: Invalid Password")
 	}
-	err := result.Decode(user)
+	err := result.Decode(&user)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +66,7 @@ func UserFromSessionID(_id string) (*User, error) {
 	if result == nil {
 		return nil, errors.New("UserFromSessionID: Token")
 	}
-	err := result.Decode(user)
+	err := result.Decode(&user)
 	if err != nil {
 		return nil, err
 	}

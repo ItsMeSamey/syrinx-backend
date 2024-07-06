@@ -18,12 +18,14 @@ func (lobby *Lobby) getUserAuth(messageType int, message []byte) (*DB.User, erro
 	if (messageType != websocket.TextMessage) {
 		return nil, errors.New("getUserAuth: Invalid messageType")
 	}
-	data := message[1:]
+	data := string(message[1:])
 	var user *DB.User = nil
 	var err error = nil
 	if message[0] == '0' {
+		// We got a _id
 		user, err = DB.UserFromSessionID(data)
 	} else if message[0] == '1' {
+		// We got Username and pass
 		var auth authUser
 		err := json.Unmarshal(message, &auth)
 		if err != nil {
@@ -31,12 +33,14 @@ func (lobby *Lobby) getUserAuth(messageType int, message []byte) (*DB.User, erro
 		}
 		user, err = DB.UserAuthenticate(auth.Username, auth.Password)
 	} else {
+		// Unknown auth type
 		return nil, errors.New("getUserAuth: spec violation")
 	}
 	if err != nil {
 		return nil, err
 	}
 
+	// check if the user is actually in lobby by lobbyID
 	has, err := user.UserInLobby(lobby.ID)
 	if err != nil {
 		return nil, err

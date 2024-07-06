@@ -1,38 +1,29 @@
 package DB
 
 import (
-  "encoding/json"
+  "errors"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Question struct {
-  QuestionID string `json:"questionID"`
-  Question   string `json:"question"`
-  Points   int  `json:"points"`
-  Answer   string `json:"answer"`
-  Hint   string `json:"hint"`
+  QuestionID string `bson:"questionID"`
+  Question   string `bson:"question"`
+  Points     int    `bson:"points"`
+  Answer     string `bson:"answer"`
+  Hint       string `bson:"hint"`
 }
 
-const (
-  questionBucket = "questions"
-)
-
-func (question *Question) Create() error {
-  data, err := json.Marshal(question)
-  if err != nil {
-    return err
-  }
-  return QuestionDB.addToBucket(questionBucket, []byte(question.QuestionID), data)
-}
-
-func (question *Question) Get(id string) error {
-  data, err := QuestionDB.getFromBucket(questionBucket, []byte(id))
-  if err != nil {
-    return err
-  }
-  return json.Unmarshal(data, question)
-}
-
-func (question *Question) Delete() error {
-  return QuestionDB.deleteInBucket(questionBucket, []byte(question.QuestionID))
+func GetQuestion(_id string) (*Question, error) {
+	var question Question
+	result := QuestionDB.coll.FindOne(UserDB.context, bson.D{{"_id", _id}})
+	if result == nil {
+		return nil, errors.New("UserFromSessionID: Token")
+	}
+	err := result.Decode(&question)
+	if err != nil {
+		return nil, err
+	}
+	return &question, err
 }
 

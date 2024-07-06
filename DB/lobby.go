@@ -4,16 +4,12 @@ import (
 
 )
 
-const (
-  lobbyBucket = "lobby"
-)
-
 type Lobby struct {
-  lobbyID int
-	Teams []string
+  ID   string    `bson:"_id,omitempty"`
+  Teams []string `bson:"teams"`
 }
 
-func DoesExistLobby(id []byte) (bool, error) {
+func UserInLobby(id []byte) (bool, error) {
   return LobbyDB.DoesExist(lobbyBucket, id)
 }
 
