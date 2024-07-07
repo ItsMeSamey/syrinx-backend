@@ -6,6 +6,7 @@ import (
 
 func (lobby *Lobby) handleTextMessage(myIndex byte, message []byte) error {
   // TODO: implement
+  _ = myIndex
   _ = message
   return nil
 }

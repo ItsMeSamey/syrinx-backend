@@ -20,10 +20,16 @@ func Start(prepend string) {
   router.StaticFile("/logos.png", prepend+"logos.png")
   router.Static("/assets", prepend+"assets")
 
-  /// The signup handler
+  /// The signup route
   router.POST("/signup", signupHandler)
+
+  /// The authantication route
+  router.POST("/authanticate", authanticationHandler)
+
+  router.POST("/getlobby", lobbyHandler)
 
   // router.GET("/ws/:lobbyID", handler)
 
   router.Run("127.0.0.1:8080")
 }
+

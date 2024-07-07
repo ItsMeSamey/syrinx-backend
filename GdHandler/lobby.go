@@ -5,17 +5,17 @@ import (
   "log"
   "strconv"
   "sync"
-  
+
   "ccs.ctf/DB"
   "github.com/gin-gonic/gin"
   "github.com/gorilla/websocket"
 )
 
 type Lobby struct {
-  ID      DB.ObjID
-  players []DB.Player
+  ID          DB.ObjID
+  players     []DB.Player
   playerMutex sync.RWMutex
-  upgrader websocket.Upgrader
+  upgrader    websocket.Upgrader
 }
 
 func makeLobby(lobby *DB.Lobby) *Lobby {
@@ -27,8 +27,8 @@ func makeLobby(lobby *DB.Lobby) *Lobby {
   }
 }
 
-func (lobby *Lobby) wsHandler(gc *gin.Context) {
-  conn, err := lobby.upgrader.Upgrade(gc.Writer, gc.Request, nil)
+func (lobby *Lobby) wsHandler(c *gin.Context) {
+  conn, err := lobby.upgrader.Upgrade(c.Writer, c.Request, nil)
   if err != nil {
     log.Print("wsHandler: Upgrade error:", err)
   }
@@ -78,7 +78,6 @@ func (lobby *Lobby) wsHandler(gc *gin.Context) {
       _ = conn.WriteMessage(websocket.BinaryMessage, packet)
     }
   }()
-
 
   for {
     messageType, message, err := conn.ReadMessage()
