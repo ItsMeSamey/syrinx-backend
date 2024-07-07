@@ -11,6 +11,11 @@ import (
   "github.com/gorilla/websocket"
 )
 
+type Player struct {
+  ID string
+  IN chan []byte
+}
+
 type Lobby struct {
   ID      string
   players []Player
