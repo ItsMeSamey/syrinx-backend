@@ -33,6 +33,6 @@ func main() {
 	// } else{
 	// 	fmt.Printf("TeamId: %d, Discord: %s\n", user.TeamID, user.DiscordID)
 	// }
-	Server.Start()
+	Server.Start("../Syrinx_Login/dist/")
 }
 

@@ -10,14 +10,20 @@ func handler(c *gin.Context) {
   fmt.Fprintf(c.Writer, "Hello from room: %s", roomID)
 }
 
-func Start() {
+func Start(prepend string) {
   router := gin.Default()
-  // router.GET("/ws/:lobbyID", handler)
+
+  /// Files needed to serve the site
+  router.StaticFile("/", prepend+"index.html")
+  router.StaticFile("/bg.jpg", prepend+"bg.jpg")
+  router.StaticFile("/ccs.png", prepend+"ccs.png")
+  router.StaticFile("/logos.png", prepend+"logos.png")
+  router.Static("/assets", prepend+"assets")
+
+  /// The signup handler
   router.POST("/signup", signupHandler)
-  router.Static("/assets", "./dist/assets")
-  router.StaticFile("/", "./dist/index.html")
-  router.StaticFile("/bg.jpg", "./dist/bg.jpg")
-  router.StaticFile("/ccs.png", "./dist/ccs.png")
-  router.StaticFile("/logos.png", "./dist/logos.png")
+
+  // router.GET("/ws/:lobbyID", handler)
+
   router.Run("127.0.0.1:8080")
 }
