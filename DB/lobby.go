@@ -1,24 +1,21 @@
 package DB
 
-import (
-)
+import "errors"
 
 type Lobby struct {
   ID   string    `bson:"_id,omitempty"`
-  Teams []string `bson:"teams"`
+  UserIDs []string `bson:"users"`
 }
 
-func UserInLobby(lobbyID, userID string) (bool, error) {
+func GetLobby(lobbyID string) ([]string, error) {
   var lobby Lobby
   err := LobbyDB.get("_id", lobbyID, &lobby)
   if err != nil {
-    return false, err
+    return nil, err
   }
-  for _, id := range lobby.Teams {
-    if userID == id {
-      return true, nil
-    }
+  if len(lobby.UserIDs) == 0 {
+    return nil, errors.New("GetLobby: Lobby is empty")
   }
-  return false, nil
+  return lobby.UserIDs, nil
 }
 
