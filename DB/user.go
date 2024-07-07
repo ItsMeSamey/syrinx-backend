@@ -24,9 +24,10 @@ func genSessionID() (SessID, error) {
 
 	bytes := make([]byte, 6*64)
 	_, err := rand.Read(bytes)
-	if len(bytes) != 64 {
-		return nil, errors.New("genSessionID: a length mismatch happened. Panic avoided!!")
-	}
+	/// This pacnics needlessly ??
+	// if len(bytes) != 64 {
+	// 	return nil, errors.New("genSessionID: a length mismatch happened. Panic avoided!!")
+	// }
 	ID := SessID(bytes)
 	if ID == nil {
 		return nil, errors.New("genSessionID: ID generation failed")
@@ -51,9 +52,10 @@ func genTeamID() (TID, error) {
 
 	bytes := make([]byte, 3)
 	_, err := rand.Read(bytes)
-	if len(bytes) != 3 {
-		return nil, errors.New("genTeamID: a length mismatch happened. Panic avoided!!")
-	}
+	/// This pacnics needlessly
+	// if len(bytes) != 3 {
+	// 	return nil, errors.New("genTeamID: a length mismatch happened. Panic avoided!!")
+	// }
 	ID := TID(bytes)
 	if ID == nil {
 		return nil, errors.New("genTeamID: ID generation failed")
