@@ -1,7 +1,9 @@
 package DB
 
 import (
-  "errors"
+	"errors"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 /// Struct meant to be used in GdIntegration
@@ -13,19 +15,37 @@ type Player struct {
 
 type Lobby struct {
   ID    ObjID    `bson:"_id,omitempty"`
-  Users []Player `bson:"users"`
+  Players []Player `bson:"users"`
 }
 
-func GetLobby(lobbyID ObjID) ([]Player, error) {
+func LobbyFromID(lobbyID ObjID) (*Lobby, error) {
   var lobby Lobby
   err := LobbyDB.get("_id", lobbyID, &lobby)
   if err != nil {
     return nil, err
   }
-  if len(lobby.Users) == 0 {
+  if len(lobby.Players) == 0 {
     return nil, errors.New("GetLobby: Lobby is empty")
   }
-  return lobby.Users, nil
+  return &lobby, nil
+}
+
+func LobbyFromUserSessionID(SessionID SessID) (*Lobby, error) {
+  query := bson.M{
+    "users": bson.M{
+      "$elemMatch": bson.M{ "sessionID": SessionID, },
+    },
+  }
+
+  var lobby Lobby
+  result := LobbyDB.Coll.FindOne(LobbyDB.Context, query)
+  if err := result.Err(); err != nil {
+    return nil, err
+  }
+  if err := result.Decode(&lobby); err != nil {
+    return nil, err
+  }
+  return &lobby, nil
 }
 
 func SaveLobby(lobby *Lobby) error {

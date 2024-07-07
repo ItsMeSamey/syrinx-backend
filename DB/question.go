@@ -11,7 +11,7 @@ type Question struct {
   Hint       string `bson:"hint"`
 }
 
-func GetQuestion(_id string) (*Question, error) {
+func QuestionFromID(_id string) (*Question, error) {
   var question Question
   return &question, QuestionDB.get("_id", _id, &question)
 }

@@ -15,15 +15,13 @@ func (lobby *Lobby) getUserAuth(messageType int, message []byte) (byte, error) {
 		return 0, errors.New("getUserAuth: Invalid messageType")
 	}
 
-	// Validate token
-	user, err := DB.UserFromSessionID(DB.SessID(message))
-	if err != nil {
-		return 0, err
+	if len(message) != 64 {
+		return 0, errors.New("getUserAuth: Invalid token length!")
 	}
 
-	// Checks if the user is a member of this lobby
+	// Validate token
 	for i, player := range lobby.players {
-		if player.ID == user.ID {
+		if player.SessionID == DB.SessID(message) {
 			return byte(i), nil
 		}
 	}

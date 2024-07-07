@@ -18,17 +18,13 @@ type Lobby struct {
   upgrader websocket.Upgrader
 }
 
-func makeLobby(ID DB.ObjID) (*Lobby, error) {
-  players, err := DB.GetLobby(ID)
-  if err != nil {
-    return nil, err
-  }
+func makeLobby(lobby *DB.Lobby) *Lobby {
   return &Lobby {
-    ID: ID,
-    players: players,
+    ID: lobby.ID,
+    players: lobby.Players,
     playerMutex: sync.RWMutex{},
     upgrader: websocket.Upgrader{ ReadBufferSize:  1024, WriteBufferSize: 1024 },
-  }, nil
+  }
 }
 
 func (lobby *Lobby) wsHandler(gc *gin.Context) {
