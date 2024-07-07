@@ -12,18 +12,18 @@ import (
 )
 
 type Player struct {
-  ID string
+  ID DB.ObjID
   IN chan []byte
 }
 
 type Lobby struct {
-  ID      string
+  ID      DB.ObjID
   players []Player
   playerMutex sync.RWMutex
   upgrader websocket.Upgrader
 }
 
-func makeLobby(ID string) (*Lobby, error) {
+func makeLobby(ID DB.ObjID) (*Lobby, error) {
   playerIDs, err := DB.GetLobby(ID)
   if err != nil {
     return nil, err

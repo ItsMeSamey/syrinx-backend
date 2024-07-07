@@ -16,12 +16,12 @@ func signupHandler(c *gin.Context) {
     return
   }
 
-  id, err :=  DB.CreateUser(&user)
+  err :=  DB.CreateUser(&user)
   if err != nil {
     c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
     return
   }
 
-  c.JSON(http.StatusOK, gin.H{"SessionID": id})
+  c.JSON(http.StatusOK, gin.H{"SessionID": user.SessionID, "TeamID": user.TeamID})
 }
 

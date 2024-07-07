@@ -3,11 +3,11 @@ package DB
 import "errors"
 
 type Lobby struct {
-  ID   string    `bson:"_id,omitempty"`
-  UserIDs []string `bson:"users"`
+  ID   ObjID    `bson:"_id,omitempty"`
+  UserIDs []ObjID `bson:"users"`
 }
 
-func GetLobby(lobbyID string) ([]string, error) {
+func GetLobby(lobbyID ObjID) ([]ObjID, error) {
   var lobby Lobby
   err := LobbyDB.get("_id", lobbyID, &lobby)
   if err != nil {

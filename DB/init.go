@@ -2,10 +2,11 @@ package DB
 
 import (
   "context"
-  "log"
   "errors"
-
+  "log"
+  
   "go.mongodb.org/mongo-driver/bson"
+  "go.mongodb.org/mongo-driver/bson/primitive"
   "go.mongodb.org/mongo-driver/mongo"
   "go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -15,8 +16,10 @@ type Collection struct {
   context context.Context
 }
 
-/// Type declaration used for session key
+/// Type declaration used for ID's
+type TID *[3]byte
 type SessID *[64]byte
+type ObjID *primitive.ObjectID
 
 /// The main Database
 var DATABASE *mongo.Database
@@ -63,7 +66,7 @@ func (db *Collection) get(k string, v any, out any) error {
 }
 
 /// Check if a entry exists in a Collection
-func (db *Collection) exists(k, v string) (bool, error) {
+func (db *Collection) exists(k string, v any) (bool, error) {
   result := UserDB.coll.FindOne(UserDB.context, bson.D{{k, v}})
   if result == nil {
     return false, errors.New("exists: got a nil result")
