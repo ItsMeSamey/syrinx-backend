@@ -11,26 +11,17 @@ import (
   "github.com/gorilla/websocket"
 )
 
-type Player struct {
-  ID DB.ObjID
-  IN chan []byte
-}
-
 type Lobby struct {
   ID      DB.ObjID
-  players []Player
+  players []DB.Player
   playerMutex sync.RWMutex
   upgrader websocket.Upgrader
 }
 
 func makeLobby(ID DB.ObjID) (*Lobby, error) {
-  playerIDs, err := DB.GetLobby(ID)
+  players, err := DB.GetLobby(ID)
   if err != nil {
     return nil, err
-  }
-  players := make([]Player, 0 ,len(playerIDs))
-  for _, id := range playerIDs {
-    players = append(players, Player{id, nil})
   }
   return &Lobby {
     ID: ID,

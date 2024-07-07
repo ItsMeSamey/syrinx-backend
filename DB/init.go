@@ -12,8 +12,8 @@ import (
 )
 
 type Collection struct {
-  coll *mongo.Collection
-  context context.Context
+  Coll *mongo.Collection
+  Context context.Context
 }
 
 /// Type declaration used for ID's
@@ -55,7 +55,7 @@ func InitDB(uri string) error {
 /// Get the result of a db quarry in a `out` object
 /// NOTE: `out` must be a pointer or Programme will panic !
 func (db *Collection) get(k string, v any, out any) error {
-  result := db.coll.FindOne(UserDB.context, bson.D{{k, v}})
+  result := db.Coll.FindOne(UserDB.Context, bson.D{{k, v}})
   if result == nil {
     return errors.New("get: got a nil result")
   }
@@ -67,7 +67,7 @@ func (db *Collection) get(k string, v any, out any) error {
 
 /// Check if a entry exists in a Collection
 func (db *Collection) exists(k string, v any) (bool, error) {
-  result := UserDB.coll.FindOne(UserDB.context, bson.D{{k, v}})
+  result := UserDB.Coll.FindOne(UserDB.Context, bson.D{{k, v}})
   if result == nil {
     return false, errors.New("exists: got a nil result")
   }

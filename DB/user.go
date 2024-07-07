@@ -15,7 +15,7 @@ type User struct {
 	Password  string `bson:"pass"`
 	TeamID    TID    `bson:"teamID"`
 	DiscordID string `bson:"discordID"`
-	SessionID SessID `bson:"SessionID"`
+	SessionID SessID `bson:"sessionID"`
 }
 
 func genSessionID() (SessID, error) {
@@ -24,6 +24,9 @@ func genSessionID() (SessID, error) {
 
 	bytes := make([]byte, 6*64)
 	_, err := rand.Read(bytes)
+	if len(bytes) != 64 {
+		return nil, errors.New("genSessionID: a length mismatch happened. Panic avoided!!")
+	}
 	ID := SessID(bytes)
 	if ID == nil {
 		return nil, errors.New("genSessionID: ID generation failed")
@@ -31,7 +34,7 @@ func genSessionID() (SessID, error) {
 	if err != nil {
 		return nil, err
 	}
-	exists, err := UserDB.exists("SessionID", bytes)
+	exists, err := UserDB.exists("sessionID", bytes)
 	if exists {
 		if times > 1024 {
 			return nil, errors.New("genSessionID: I'm a Bathtub, (if you are seeing this, contact us IMMEDIATELY!)")
@@ -48,6 +51,9 @@ func genTeamID() (TID, error) {
 
 	bytes := make([]byte, 3)
 	_, err := rand.Read(bytes)
+	if len(bytes) != 3 {
+		return nil, errors.New("genTeamID: a length mismatch happened. Panic avoided!!")
+	}
 	ID := TID(bytes)
 	if ID == nil {
 		return nil, errors.New("genTeamID: ID generation failed")
@@ -55,7 +61,7 @@ func genTeamID() (TID, error) {
 	if err != nil {
 		return nil, err
 	}
-	exists, err := UserDB.exists("TeamID", bytes)
+	exists, err := UserDB.exists("teamID", bytes)
 	if exists {
 		if times > 1024*1024 {
 			return nil, errors.New("genTeamID: OOPS, Lucky Draw!!, (if you are seeing this, contact us!)")
@@ -88,7 +94,7 @@ func CreateUser(user *User) error {
 		}
 		user.TeamID = tid
 	} else {
-		exists, err := UserDB.exists("TeamID", user.TeamID)
+		exists, err := UserDB.exists("teamID", user.TeamID)
 		if err != nil {
 			return err
 		}
@@ -105,14 +111,14 @@ func CreateUser(user *User) error {
 		return err
 	}
 
-	_, err = UserDB.coll.InsertOne(UserDB.context, *user)
+	_, err = UserDB.Coll.InsertOne(UserDB.Context, *user)
 
 	return err
 }
 
 func UserAuthenticate(username, password string) (*User, error) {
 	var user User
-	result := UserDB.coll.FindOne(UserDB.context, bson.D{{"user", username}, {"pass", password}})
+	result := UserDB.Coll.FindOne(UserDB.Context, bson.D{{"user", username}, {"pass", password}})
 	if result == nil {
 		return nil, errors.New("UserAuthenticate: Invalid Password")
 	}
@@ -125,6 +131,6 @@ func UserAuthenticate(username, password string) (*User, error) {
 
 func UserFromSessionID(SessionID SessID) (*User, error) {
 	var user User
-	return &user, UserDB.get("SessionID", SessionID, &user)
+	return &user, UserDB.get("sessionID", SessionID, &user)
 }
 
