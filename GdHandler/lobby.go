@@ -51,23 +51,24 @@ func (lobby *Lobby) wsHandler(gc *gin.Context, index int) {
 
   myself := lobby.players[index]
   myself.WS = conn
-  for myself.ID == "" {
+  for {
     messageType, message, err := conn.ReadMessage()
     if err != nil {
       log.Println("wsHandler: Read error:", err)
       continue
     }
     if messageType == websocket.CloseMessage {
-      conn.Close()
-      break
+      _ = conn.Close()
+      return
     }
     myself.ID, err = lobby.getUserAuth(messageType, message)
     if err == nil && myself.ID != "" {
-      _ = conn.WriteMessage(messageType, []byte("0Success"))
+      if conn.WriteMessage(messageType, []byte("0Success")) == nil {
+        break
+      }
     } else {
       _ = conn.WriteMessage(messageType, []byte("1Authentication Error"))
     }
-    continue
   }
 
   for {

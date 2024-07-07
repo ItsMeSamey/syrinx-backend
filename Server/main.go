@@ -11,17 +11,13 @@ func handler(c *gin.Context) {
 }
 
 func Start() {
-  var intt []int = nil
-  fmt.Println(len(intt))
-
-  intt = append(intt, 1)
-  fmt.Println(len(intt))
-
-  intt = append(intt[:0], intt[:0]...)
-  fmt.Println(len(intt))
-
-
   router := gin.Default()
-  router.GET("/ws/:lobbyID", handler)
-  router.Run(":8080")
+  // router.GET("/ws/:lobbyID", handler)
+  router.POST("/signup", signupHandler)
+  router.Static("/assets", "./dist/assets")
+  router.StaticFile("/", "./dist/index.html")
+  router.StaticFile("/bg.jpg", "./dist/bg.jpg")
+  router.StaticFile("/ccs.png", "./dist/ccs.png")
+  router.StaticFile("/logos.png", "./dist/logos.png")
+  router.Run("127.0.0.1:8080")
 }

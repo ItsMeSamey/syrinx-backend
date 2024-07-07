@@ -36,12 +36,12 @@ func CreateUser(user *User) (SessID, error) {
 		return nil, errors.New("CreateUser: SessionID cannot be set")
 	}
 
-	ID, err := genSessionID()
+	SessionID, err := genSessionID()
 	if err != nil {
 		return nil, err
 	}
 
-	user.SessionID = ID
+	user.SessionID = SessionID
 
 	exists, err := UserDB.exists("user", user.Username)
 	if exists {
@@ -56,7 +56,7 @@ func CreateUser(user *User) (SessID, error) {
 		return nil, err
 	}
 
-	return ID, nil
+	return SessionID, nil
 }
 
 func UserAuthenticate(username, password string) (*User, error) {
