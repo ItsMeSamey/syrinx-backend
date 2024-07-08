@@ -1,12 +1,12 @@
 package GdHandler
 
 import (
-	"sync"
-	"time"
-
-	"ccs.ctf/DB"
-	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+  "sync"
+  "time"
+  
+  "ccs.ctf/DB"
+  "github.com/gin-gonic/gin"
+  "go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var lobbies map[primitive.ObjectID]*Lobby
@@ -48,31 +48,31 @@ begin:
 //! WARNING: DO NOT MESS WITH THIS UNLESS YOU KNOW WHAT YOU ARE DOING
 /// Connect to a lobby if one exists or add it to the lobby map
 func ConnectToLobby(lobby *DB.Lobby, c *gin.Context) {
-	start:
-	lobbiesMutex.RLock()
-	val, ok := lobbies[*lobby.ID]
-	lobbiesMutex.RUnlock()
-	if ok {
-		val.playerMutex.Lock()
-		if val.deadtime >= 10 { goto start }
-		val.playercount += 1
-		go val.wsHandler(c)
-	} else {
-		// A user will be stranded in a isolated lobby if thisis ignored
-		lobbiesMutex.Lock()
-		val, ok := lobbies[*lobby.ID]
-		
-		if ok {// If a lobby was created when we switched locks !!
-			lobbiesMutex.Unlock()
-			goto start
-		} else {
-			val = makeLobby(lobby)
-			lobbies[*lobby.ID] = val
-			lobbiesMutex.Unlock()
-			val.playercount += 1
-			go val.wsHandler(c)
-			go watchdog(val)
-		}
-	}
+  start:
+  lobbiesMutex.RLock()
+  val, ok := lobbies[*lobby.ID]
+  lobbiesMutex.RUnlock()
+  if ok {
+    val.playerMutex.Lock()
+    if val.deadtime >= 10 { goto start }
+    val.playercount += 1
+    go val.wsHandler(c)
+  } else {
+    // A user will be stranded in a isolated lobby if thisis ignored
+    lobbiesMutex.Lock()
+    val, ok := lobbies[*lobby.ID]
+    
+    if ok {// If a lobby was created when we switched locks !!
+      lobbiesMutex.Unlock()
+      goto start
+    } else {
+      val = makeLobby(lobby)
+      lobbies[*lobby.ID] = val
+      lobbiesMutex.Unlock()
+      val.playercount += 1
+      go val.wsHandler(c)
+      go watchdog(val)
+    }
+  }
 }
 

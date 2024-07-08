@@ -1,9 +1,9 @@
 package DB
 
 import (
-	"errors"
-
-	"go.mongodb.org/mongo-driver/bson"
+  "errors"
+  
+  "go.mongodb.org/mongo-driver/bson"
 )
 
 /// Struct meant to be used in GdIntegration

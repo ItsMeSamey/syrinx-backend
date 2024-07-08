@@ -1,12 +1,12 @@
 package Server
 
 import (
-	"net/http"
-
-	"ccs.ctf/DB"
-	"ccs.ctf/GdHandler"
-
-	"github.com/gin-gonic/gin"
+  "net/http"
+  
+  "ccs.ctf/DB"
+  "ccs.ctf/GdHandler"
+  
+  "github.com/gin-gonic/gin"
 )
 
 func signupHandler(c *gin.Context) {
