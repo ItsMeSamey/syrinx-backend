@@ -74,16 +74,9 @@ func genTeamID() (TID, error) {
 	return ID, err
 }
 
-func CreateUser(in *User) error {
-	user := &User{
-		ID: nil,
-		Username: in.Username,
-		Email: in.Email,
-		Password: in.Password,
-		TeamID: in.TeamID,
-		DiscordID: in.DiscordID,
-		SessionID: nil,
-	}
+func CreateUser(user *User) error {
+	user.ID = nil
+	user.SessionID = nil
 
 	exists, err := UserDB.exists("user", user.Username)
 	if err != nil { return err }
