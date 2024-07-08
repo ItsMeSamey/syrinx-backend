@@ -4,6 +4,7 @@ import (
   "errors"
 )
 
+/// This will probably handle questioning/answering
 func (lobby *Lobby) handleTextMessage(myIndex byte, message []byte) error {
   // TODO: implement
   _ = myIndex
@@ -11,6 +12,7 @@ func (lobby *Lobby) handleTextMessage(myIndex byte, message []byte) error {
   return nil
 }
 
+/// Handles ninary message to websocket
 func (lobby *Lobby) handleBinaryMessage(myIndex byte, message []byte) error {
   if len(message) < 1 {
     return errors.New("handleBinaryMessage: Destination Index not provided")

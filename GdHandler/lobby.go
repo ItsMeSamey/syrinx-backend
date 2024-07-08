@@ -14,16 +14,20 @@ import (
 type Lobby struct {
   ID          DB.ObjID
   players     []DB.Player
+  playercount byte
   playerMutex sync.RWMutex
   upgrader    websocket.Upgrader
+  deadtime    byte
 }
 
 func makeLobby(lobby *DB.Lobby) *Lobby {
   return &Lobby {
     ID: lobby.ID,
     players: lobby.Players,
+    playercount: 0,
     playerMutex: sync.RWMutex{},
     upgrader: websocket.Upgrader{ ReadBufferSize:  1024, WriteBufferSize: 1024 },
+    deadtime: 0,
   }
 }
 
@@ -32,7 +36,12 @@ func (lobby *Lobby) wsHandler(c *gin.Context) {
   if err != nil {
     log.Print("wsHandler: Upgrade error:", err)
   }
-  defer conn.Close()
+  defer func () {
+    lobby.playerMutex.Lock()
+    lobby.playercount -= 1
+    lobby.playerMutex.Unlock()
+    conn.Close()
+  }()
 
   var myIndex byte
   // Authanticate the user
@@ -58,11 +67,9 @@ func (lobby *Lobby) wsHandler(c *gin.Context) {
 
   // Create a player receiving channel
   channel := make(chan []byte, 128)
-  func () {
-    lobby.playerMutex.Lock()
-    lobby.players[myIndex].IN = channel
-    lobby.playerMutex.Unlock()
-  }()
+  lobby.playerMutex.Lock()
+  lobby.players[myIndex].IN = channel
+  lobby.playerMutex.Unlock()
 
   // Delete the player receiving channel in the end
   defer func () {
@@ -79,6 +86,7 @@ func (lobby *Lobby) wsHandler(c *gin.Context) {
     }
   }()
 
+  // Handle outbound data
   for {
     messageType, message, err := conn.ReadMessage()
     if err != nil {

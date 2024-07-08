@@ -1,16 +1,19 @@
 package Server
 
 import (
-  "fmt"
   "github.com/gin-gonic/gin"
 )
 
-func handler(c *gin.Context) {
-  roomID := c.Param("lobbyID")
-  fmt.Fprintf(c.Writer, "Hello from room: %s", roomID)
-}
+// func handler(c *gin.Context) {
+//   roomID := c.Param("lobbyID")
+//   fmt.Fprintf(c.Writer, "Hello from room: %s", roomID)
+// }
 
-func Start(prepend string) {
+/// This gunction Starts the frontend Server
+/// This blocks forever and thus you might consider running this as async
+///
+/// `prepend` is the parh to `npm run build`'s output dir, usually 'dist'
+func Start(ip string, prepend string) {
   router := gin.Default()
 
   /// Files needed to serve the site
@@ -30,6 +33,6 @@ func Start(prepend string) {
 
   // router.GET("/ws/:lobbyID", handler)
 
-  router.Run("127.0.0.1:8080")
+  router.Run(ip)
 }
 
