@@ -74,20 +74,28 @@ func genTeamID() (TID, error) {
 	return ID, err
 }
 
-func CreateUser(user *User) error {
-	if user.ID != nil {
-		return errors.New("CreateUser: ID cannot be set")
-	}
-	if user.SessionID != nil {
-		return errors.New("CreateUser: SessionID cannot be set")
-	}
-
-	SessionID, err := genSessionID()
-	if err != nil {
-		return err
+func CreateUser(in *User) error {
+	user := &User{
+		ID: nil,
+		Username: in.Username,
+		Email: in.Email,
+		Password: in.Password,
+		TeamID: in.TeamID,
+		DiscordID: in.DiscordID,
+		SessionID: nil,
 	}
 
-	user.SessionID = SessionID
+	exists, err := UserDB.exists("user", user.Username)
+	if err != nil { return err }
+	if exists { return errors.New("CreateUser: User already exists") }
+
+	exists, err = UserDB.exists("mail", user.Email)
+	if err != nil { return err }
+	if exists { return errors.New("CreateUser: Email cannot be reused") }
+
+	exists, err = UserDB.exists("discordID", user.DiscordID)
+	if err != nil { return err }
+	if exists { return errors.New("CreateUser: Discord ID cannot be reused") }
 
 	if user.TeamID == nil {
 		tid, err := genTeamID()
@@ -105,13 +113,10 @@ func CreateUser(user *User) error {
 		}
 	}
 
-	exists, err := UserDB.exists("user", user.Username)
-	if exists {
-		return errors.New("CreateUser: User exists")
-	}
-	if err != nil {
-		return err
-	}
+	SessionID, err := genSessionID()
+	if err != nil { return err }
+
+	user.SessionID = SessionID
 
 	_, err = UserDB.Coll.InsertOne(UserDB.Context, *user)
 
