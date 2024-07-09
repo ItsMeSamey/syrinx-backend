@@ -111,7 +111,7 @@ func internalSendConfirmationEmail(user *User) error {
 }
 
 func internalUpdateEmailStatus(user *User) error {
-  _, err := UserDB.Coll.UpdateByID(UserDB.Context, *user.ID, bson.D{{"$set", bson.D{{"mailReceived", true}}}})
+  _, err := UserDB.Coll.UpdateOne(UserDB.Context, bson.D{{"user", user.Username}}, bson.D{{"$set", bson.D{{"mailReceived", true}}}})
   return err
 }
 
@@ -135,7 +135,6 @@ func sendEmailAsync(user *User) {
 func CreateUser(user *User) error {
   user.ID = nil
   user.SessionID = nil
-  user.EmailReceived = false
 
   exists, err := UserDB.exists("user", user.Username)
   if err != nil { return err }
