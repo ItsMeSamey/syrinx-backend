@@ -1,16 +1,16 @@
 package DB
 
 import (
-  "crypto/rand"
-  "errors"
-  
-  "encoding/hex"
-  "net/smtp"
-  "html/template"
-  "bytes"
-  "fmt"
+	"crypto/rand"
+	"errors"
+	"time"
 
-  "go.mongodb.org/mongo-driver/bson"
+	"bytes"
+	"encoding/hex"
+	"html/template"
+	"net/smtp"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // User struct to store user information
@@ -22,6 +22,7 @@ type User struct {
   TeamID  TID  `bson:"teamID"`
   DiscordID string `bson:"discordID"`
   SessionID SessID `bson:"sessionID"`
+  EmailReceived bool `bson:"mailReceived"`
 }
 
 func genSessionID() (SessID, error) {
@@ -30,10 +31,6 @@ func genSessionID() (SessID, error) {
 
   bytes := make([]byte, 6*64)
   _, err := rand.Read(bytes)
-  /// This pacnics needlessly ??
-  // if len(bytes) != 64 {
-  //   return nil, errors.New("genSessionID: a length mismatch happened. Panic avoided!!")
-  // }
   ID := SessID(bytes)
   if ID == nil {
     return nil, errors.New("genSessionID: ID generation failed")
@@ -58,10 +55,6 @@ func genTeamID() (TID, error) {
 
   bytes := make([]byte, 3)
   _, err := rand.Read(bytes)
-  /// This pacnics needlessly
-  // if len(bytes) != 3 {
-  //   return nil, errors.New("genTeamID: a length mismatch happened. Panic avoided!!")
-  // }
   ID := TID(bytes)
   if ID == nil {
     return nil, errors.New("genTeamID: ID generation failed")
@@ -80,9 +73,69 @@ func genTeamID() (TID, error) {
   return ID, err
 }
 
+/// blocking send email function
+func internalSendConfirmationEmail(user *User) error {
+  const from = "riteshkapoor1314@gmail.com"
+  const subject = "Subject: Confirmation for participation in Syrinx\n"
+  const mime = "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+
+  tmpl, err := template.ParseFiles("email_template.html")
+  if err != nil {
+    return err
+  }
+
+  var body bytes.Buffer
+  err = tmpl.Execute(&body, struct {
+    Username  string
+    Email   string
+    TeamID string
+  }{
+    Username:  user.Username,
+    Email:   user.Email,
+    TeamID: hex.EncodeToString(user.TeamID[:]),
+  })
+  if err != nil {
+    return err
+  }
+
+  message := subject + mime + body.String()
+
+  err = smtp.SendMail("smtp.gmail.com:587", smtp.PlainAuth("", from, "cpkm fnxf rjjq tysy", "smtp.gmail.com"),
+                      from, []string{user.Email}, []byte(message),
+  )
+  if err != nil {
+    return err
+  }
+
+  return nil
+}
+
+func internalUpdateEmailStatus(user *User) error {
+  _, err := UserDB.Coll.UpdateByID(UserDB.Context, *user.ID, bson.D{{"$set", bson.D{{"mailReceived", true}}}})
+  return err
+}
+
+/// Must run this as Async
+func sendEmailAsync(user *User) {
+  var err error
+
+  err = internalSendConfirmationEmail(user)
+  for err != nil {
+    time.Sleep(time.Minute)
+    err = internalSendConfirmationEmail(user)
+  }
+
+  err = internalUpdateEmailStatus(user)
+  for err != nil {
+    time.Sleep(time.Minute)
+    err = internalUpdateEmailStatus(user)
+  }
+}
+
 func CreateUser(user *User) error {
   user.ID = nil
   user.SessionID = nil
+  user.EmailReceived = false
 
   exists, err := UserDB.exists("user", user.Username)
   if err != nil { return err }
@@ -117,8 +170,7 @@ func CreateUser(user *User) error {
 
   user.SessionID = SessionID
 
-  err = sendConfirmationEmail(user)
-
+  go sendEmailAsync(user)
   if err != nil {
     return err
   }
@@ -143,47 +195,5 @@ func UserAuthenticate(username, password string) (*User, error) {
 func UserFromSessionID(SessionID SessID) (*User, error) {
   var user User
   return &user, UserDB.get("sessionID", SessionID, &user)
-}
-
-func sendConfirmationEmail(user *User) error {
-  tmpl, err := template.ParseFiles("email_template.html")
-  if err != nil {
-    fmt.Errorf("failed to parse template: %w", err)
-    return err
-  }
-
-  id := user.TeamID
-  hexStr := hex.EncodeToString(id[:])
-
-  var body bytes.Buffer
-  err = tmpl.Execute(&body, struct {
-    Username  string
-    Email   string
-    TeamID string
-  }{
-    Username:  user.Username,
-    Email:   user.Email,
-    TeamID: hexStr,
-  })
-  if err != nil {
-    fmt.Errorf("failed to execute template: %w", err)
-    return err
-  }
-
-  from := "riteshkapoor1314@gmail.com"
-  subject := "Subject: Confirmation for participation in Syrinx\n"
-  mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-  message := subject + mime + body.String()
-
-  err = smtp.SendMail("smtp.gmail.com:587",
-    smtp.PlainAuth("", from, "cpkm fnxf rjjq tysy", "smtp.gmail.com"),
-    from, []string{user.Email}, []byte(message))
-
-  if err != nil {
-    fmt.Errorf("failed to send email: %w", err)
-    return err
-  }
-
-  return nil
 }
 
