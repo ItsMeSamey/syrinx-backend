@@ -3,12 +3,11 @@ package DB
 import (
 	"crypto/rand"
 	"errors"
-	"encoding/base64"
+	
     "encoding/hex"
 	"net/smtp"
 	"html/template"
 	"bytes"
-	"strconv"
     "fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -119,7 +118,7 @@ func CreateUser(user *User) error {
 	user.SessionID = SessionID
 
 	_, err = UserDB.Coll.InsertOne(UserDB.Context, *user)
-
+	sendConfirmationEmail(user)
 	return err
 }
 
@@ -141,31 +140,34 @@ func UserFromSessionID(SessionID SessID) (*User, error) {
 	return &user, UserDB.get("sessionID", SessionID, &user)
 }
 
+
+
+
+
 func sendConfirmationEmail(user *User) error {
     tmpl, err := template.ParseFiles("email_template.html")
     if err != nil {
         return fmt.Errorf("failed to parse template: %w", err)
     }
-	var TeamID TID = user.TeamID
-	var tidString string =  strconv.FormatUint.(TeamID)
-    hexStr, err := base64ToHex(tidString)
-    if err != nil {
-        fmt.Println("Error:", err)
-        
+
+    // Convert TeamID ([]int) to []byte
+    teamIDBytes := make([]byte, len(user.TeamID))
+    for i, v := range user.TeamID {
+        teamIDBytes[i] = byte(v)
     }
-    fmt.Println("Hex:", hexStr)
+
+    // Convert []byte to hex string
+    hexStr := hex.EncodeToString(teamIDBytes)
+
     var body bytes.Buffer
-
-
-
     err = tmpl.Execute(&body, struct {
-        Username string
-        TeamName string
-        Email    string
+        Username  string
+        Email     string
+        TeamIDHex string
     }{
-        Username: user.Username,
-        // TeamName: user.TeamID, 
-        Email:    user.Email,
+        Username:  user.Username,
+        Email:     user.Email,
+        TeamIDHex: hexStr,
     })
     if err != nil {
         return fmt.Errorf("failed to execute template: %w", err)
@@ -178,19 +180,11 @@ func sendConfirmationEmail(user *User) error {
     message := subject + mime + body.String()
 
     err = smtp.SendMail("smtp.gmail.com:587",
-        smtp.PlainAuth("", from, "cpkm fnxf rjjq tysy", "smtp.gmail.com"),
+        smtp.PlainAuth("", from, "cpkmfnxfrjjqtysy", "smtp.gmail.com"),
         from, to, []byte(message))
     if err != nil {
         return fmt.Errorf("failed to send email: %w", err)
     }
 
     return nil
-}
-
-func base64ToHex(b64 string) (string, error) {
-    bytes, err := base64.StdEncoding.DecodeString(b64)
-    if err != nil {
-        return "", err
-    }
-    return hex.EncodeToString(bytes), nil
 }
