@@ -3,6 +3,13 @@ package DB
 import (
 	"crypto/rand"
 	"errors"
+	"encoding/base64"
+    "encoding/hex"
+	"net/smtp"
+	"html/template"
+	"bytes"
+	"strconv"
+    "fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -134,3 +141,56 @@ func UserFromSessionID(SessionID SessID) (*User, error) {
 	return &user, UserDB.get("sessionID", SessionID, &user)
 }
 
+func sendConfirmationEmail(user *User) error {
+    tmpl, err := template.ParseFiles("email_template.html")
+    if err != nil {
+        return fmt.Errorf("failed to parse template: %w", err)
+    }
+	var TeamID TID = user.TeamID
+	var tidString string =  strconv.FormatUint.(TeamID)
+    hexStr, err := base64ToHex(tidString)
+    if err != nil {
+        fmt.Println("Error:", err)
+        
+    }
+    fmt.Println("Hex:", hexStr)
+    var body bytes.Buffer
+
+
+
+    err = tmpl.Execute(&body, struct {
+        Username string
+        TeamName string
+        Email    string
+    }{
+        Username: user.Username,
+        // TeamName: user.TeamID, 
+        Email:    user.Email,
+    })
+    if err != nil {
+        return fmt.Errorf("failed to execute template: %w", err)
+    }
+
+    from := "riteshkapoor1314@gmail.com"
+    to := []string{user.Email}
+    subject := "Subject: Confirmation for participation in Syrinx\n"
+    mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+    message := subject + mime + body.String()
+
+    err = smtp.SendMail("smtp.gmail.com:587",
+        smtp.PlainAuth("", from, "cpkm fnxf rjjq tysy", "smtp.gmail.com"),
+        from, to, []byte(message))
+    if err != nil {
+        return fmt.Errorf("failed to send email: %w", err)
+    }
+
+    return nil
+}
+
+func base64ToHex(b64 string) (string, error) {
+    bytes, err := base64.StdEncoding.DecodeString(b64)
+    if err != nil {
+        return "", err
+    }
+    return hex.EncodeToString(bytes), nil
+}
