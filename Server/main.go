@@ -1,22 +1,39 @@
 package Server
 
 import (
+  "io"
+  "log"
+  "os"
+  
   "github.com/gin-gonic/gin"
 )
 
+// func handler(c *gin.Context) {
+//   roomID := c.Param("lobbyID")
+//   fmt.Fprintf(c.Writer, "Hello from room: %s", roomID)
+// }
+
+
+var writer io.Writer = nil
 /// This gunction Starts the frontend Server
 /// This blocks forever and thus you might consider running this as async
 ///
 /// `prepend` is the parh to `npm run build`'s output dir, usually 'dist'
 func Start(ip string, prepend string) {
-  router := gin.Default()
 
-  /// Files needed to serve the site
-  router.StaticFile("/", prepend+"index.html")
-  router.StaticFile("/bg.jpg", prepend+"bg.jpg")
-  router.StaticFile("/ccs.png", prepend+"ccs.png")
-  router.StaticFile("/logos.png", prepend+"logos.png")
-  router.Static("/assets", prepend+"assets")
+  f, err := os.Create("gin.log")
+  if err != nil {
+    log.Fatal("Could not create a log file.")
+  }
+  writer = io.MultiWriter(f)
+
+  /// Disable Color to make file readable
+  gin.DisableConsoleColor()
+
+  /// Log to a file.
+  gin.DefaultWriter = writer
+
+  router := gin.Default()
 
   /// The signup route
   router.POST("/signup", signupHandler)
@@ -26,6 +43,9 @@ func Start(ip string, prepend string) {
 
   router.POST("/getlobby", lobbyHandler)
 
+  // router.GET("/ws/:lobbyID", handler)
+
+  log.Println("Server satarted successfully")
   router.Run(ip)
 }
 

@@ -9,58 +9,74 @@ import (
   "github.com/gin-gonic/gin"
 )
 
+/// Easily extensible for logging pur
+func setJson(c *gin.Context, code int, json gin.H) {
+  c.JSON(code, json)
+}
+
+func setSuccessJson(c *gin.Context, json gin.H) {
+  setJson(c, http.StatusOK, json)
+}
+
+func setErrorJson(c *gin.Context, code int, errstr string) {
+  go func(){ writer.Write([]byte(errstr)) }()
+  setJson(c, code, gin.H{"error": errstr})
+}
+
+/// Function to call on signup request
 func signupHandler(c *gin.Context) {
   var user DB.User
   if err := c.BindJSON(&user); err != nil {
-    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+    setErrorJson(c, http.StatusBadRequest, err.Error())
     return
   }
 
-  err :=  DB.CreateUser(&user)
-  if err != nil {
-    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+  if  err := DB.CreateUser(&user); err != nil {
+    setErrorJson(c, http.StatusBadRequest, err.Error())
     return
   }
 
-  c.JSON(http.StatusOK, gin.H{"SessionID": user.SessionID, "TeamID": user.TeamID})
+  setSuccessJson(c, gin.H{"SessionID": user.SessionID, "TeamID": user.TeamID})
 }
 
+/// Function to call for authantication
 func authanticationHandler(c *gin.Context) {
   var user DB.User
   if err := c.BindJSON(&user); err != nil {
-    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+    setErrorJson(c, http.StatusBadRequest, err.Error())
     return
   }
 
   if user.Username == "" || user.Password == "" {
-    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Username and Password are required"})
+    setErrorJson(c, http.StatusBadRequest, "Username and Password are required")
     return
   }
 
   usr, err := DB.UserAuthenticate(user.Username, user.Password)
   if err != nil {
-    c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+    setErrorJson(c, http.StatusUnauthorized, err.Error())
     return
   }
 
-  c.JSON(http.StatusOK, gin.H{"SessionID": usr.SessionID})
+  setSuccessJson(c, gin.H{"SessionID": usr.SessionID})
 }
 
+/// Function to call when user asks for their lobby
 func lobbyHandler(c *gin.Context) {
   var user DB.User
   if err := c.BindJSON(&user); err != nil {
-    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+    setErrorJson(c, http.StatusBadRequest, err.Error())
     return
   }
 
   if user.SessionID == nil {
-    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Username and Password are required"})
+    setErrorJson(c, http.StatusBadRequest, "Username and Password are required")
     return
   }
 
   lobbyObj, err := DB.LobbyFromUserSessionID(user.SessionID)
   if err != nil {
-    c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+    setErrorJson(c, http.StatusInternalServerError, err.Error())
     return
   }
 
