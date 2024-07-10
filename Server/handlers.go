@@ -1,6 +1,7 @@
 package Server
 
 import (
+  "io"
   "net/http"
   
   "ccs.ctf/DB"
@@ -11,6 +12,13 @@ import (
 
 /// Easily extensible for logging pur
 func setJson(c *gin.Context, code int, json gin.H) {
+  go func(){
+    body, err := c.Request.GetBody()
+    if err != nil || body == nil { return }
+    data, err := io.ReadAll(body)
+    if err != nil || data == nil { return }
+    _, _ = writer.Write(data)
+  }()
   c.JSON(code, json)
 }
 
