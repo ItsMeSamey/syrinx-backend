@@ -1,16 +1,16 @@
 package DB
 
 import (
-	"crypto/rand"
-	"errors"
-	"time"
-
-	"bytes"
-	"encoding/hex"
-	"html/template"
-	"net/smtp"
-
-	"go.mongodb.org/mongo-driver/bson"
+  "crypto/rand"
+  "errors"
+  "time"
+  
+  "bytes"
+  "encoding/hex"
+  "html/template"
+  "net/smtp"
+  
+  "go.mongodb.org/mongo-driver/bson"
 )
 
 // User struct to store user information

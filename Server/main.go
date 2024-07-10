@@ -4,11 +4,6 @@ import (
   "github.com/gin-gonic/gin"
 )
 
-// func handler(c *gin.Context) {
-//   roomID := c.Param("lobbyID")
-//   fmt.Fprintf(c.Writer, "Hello from room: %s", roomID)
-// }
-
 /// This gunction Starts the frontend Server
 /// This blocks forever and thus you might consider running this as async
 ///
@@ -30,8 +25,6 @@ func Start(ip string, prepend string) {
   router.POST("/authanticate", authanticationHandler)
 
   router.POST("/getlobby", lobbyHandler)
-
-  // router.GET("/ws/:lobbyID", handler)
 
   router.Run(ip)
 }
