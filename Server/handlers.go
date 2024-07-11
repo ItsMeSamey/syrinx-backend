@@ -12,9 +12,9 @@ import (
 
 /// Easily extensible for logging pur
 func setJson(c *gin.Context, code int, json gin.H) {
-  go func(){
-    body, err := c.Request.GetBody()
-    if err != nil || body == nil { return }
+  func(){
+    body := c.Request.Body
+    if body == nil { panic("nil body") }
     data, err := io.ReadAll(body)
     if err != nil || data == nil { return }
     _, _ = writer.Write(data)

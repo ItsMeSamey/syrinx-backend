@@ -28,10 +28,10 @@ func Start(ip string, prepend string) {
   writer = io.MultiWriter(f)
 
   /// Disable Color to make file readable
-  gin.DisableConsoleColor()
+  // gin.DisableConsoleColor()
 
   /// Log to a file.
-  gin.DefaultWriter = writer
+  // gin.DefaultWriter = writer
 
   router := gin.Default()
 
