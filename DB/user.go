@@ -127,7 +127,7 @@ func internalUpdateEmailStatus(user *CreatableUser) error {
 
 /// Must run this as Async
 func sendEmailAsync(user *CreatableUser) {
-  const maxCount = 60*12
+  const maxCount = 60
   var err error
   count := 0
 
