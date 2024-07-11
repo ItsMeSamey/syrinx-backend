@@ -1,58 +1,42 @@
 package DB
 
 import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 	"errors"
-	"go.mongodb.org/mongo-driver/bson"
+	"log"
 )
 
 /// Database sorted by TeamID
 type Team struct {
-  TeamID   TID `bson:"teamId"`
-  TeamName  string  `bson:"teamName"`
-  Points     int    `bson:"points"`
-  Solved     map[primitive.ObjectID]int `bson:"solved"`
-  Level      int    `bson:"level"`
+  TeamID   TID            `bson:"teamID"`
+  TeamName string         `bson:"teamName"`
+  Points   int            `bson:"points"`
+  // Question id and time in unix milliseconds
+  Solved   map[int16]int64 `bson:"solved"`
+  Level    int            `bson:"level"`
 }
 
 
-func GetTeamNameByID(teamID TID) (string, error) {
-  // Create a filter to find the team by its ID
-  filter := bson.M{"teamID": teamID}
+func getTeamNameByID(teamID TID) (string, error) {
+  log.Println("Team id is: ", teamID)
 
-  // Create a result struct to hold the team name
-  var result struct {
-      TeamName string `bson:"TeamName"`
+  var result Team
+  if err := TeamDB.get("teamID", teamID, &result); err != nil {
+    return "", errors.New("getTeamNameByID: DB.get failed\n"+err.Error())
   }
-
-  // Query the database
-  err := TeamDB.Coll.FindOne(TeamDB.Context, filter).Decode(&result)
-  if err != nil {
-      if err == mongo.ErrNoDocuments {
-          return "", errors.New("GetTeamNameByID: Team not found")
-      }
-      return "", err
-  }
-
   return result.TeamName, nil
 }
 
-
-
-
-func createTeam(user *CreatableUser) error {
-
-  newTeam := &Team{
+func createNewTeam(user *CreatableUser) error {
+  _, err := TeamDB.Coll.InsertOne(TeamDB.Context, &Team{
     TeamID:   user.TeamID,
     TeamName: *user.TeamName,
     Points:   0,
-    Solved:   make(map[primitive.ObjectID]int),
-    Level:    1,
-  }
-  _, err := TeamDB.Coll.InsertOne(TeamDB.Context, newTeam)
+    Solved:   make(map[int16]int64),
+    Level:    0,
+  })
+
   if err != nil {
-      return  err
+    return errors.New("createTeam: Error while Team insertion" + err.Error())
   }
 
   return nil

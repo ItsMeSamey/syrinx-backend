@@ -50,7 +50,7 @@ func genSessionID() (SessID, error) {
   exists, err := UserDB.exists("sessionID", bytes)
   if exists {
     if times > 1024 {
-      return nil, errors.New("genSessionID: I'm a Bathtub")
+      return nil, errors.New("genSessionID: Lucky Error!!")
     }
     times += 1
     goto start
@@ -74,7 +74,7 @@ func genTeamID() (TID, error) {
   exists, err := UserDB.exists("teamID", bytes)
   if exists {
     if times > 1024*1024 {
-      return nil, errors.New("genTeamID: OOPS, Lucky Draw!!")
+      return nil, errors.New("genTeamID: OOPS! Good Luck!")
     }
     times += 1
     goto start
@@ -121,7 +121,7 @@ func internalSendConfirmationEmail(user *CreatableUser) error {
 }
 
 func internalUpdateEmailStatus(user *CreatableUser) error {
-  _, err := UserDB.Coll.UpdateOne(UserDB.Context, bson.D{{"user", user.Username}}, bson.D{{"$set", bson.D{{"mailReceived", true}}}})
+  _, err := UserDB.Coll.UpdateOne(UserDB.Context, bson.M{"user": user.Username}, bson.M{"$set": bson.M{"mailReceived": true}})
   return err
 }
 
@@ -153,7 +153,7 @@ func CreateUser(user *CreatableUser) (SessID, error) {
   if exists { return nil, errors.New("CreateUser: User already exists") }
 
   exists, err = UserDB.exists("mail", user.Email)
-  if err != nil { errors.New("CreateUser: Error while email lookup\n"+ err.Error()) }
+  if err != nil { return nil, errors.New("CreateUser: Error while email lookup\n"+ err.Error()) }
   if exists { return nil, errors.New("CreateUser: Email cannot be reused") }
 
   exists, err = UserDB.exists("discordID", user.DiscordID)
@@ -166,11 +166,16 @@ func CreateUser(user *CreatableUser) (SessID, error) {
     }
     tid, err := genTeamID()
     if err != nil {
-      return nil, errors.New("CreateUser: could not generate teamID\n"+ err.Error())
+      return nil, errors.New("CreateUser: Could not generate teamID\n"+ err.Error())
     }
     user.TeamID = tid
+
+    err = createNewTeam(user)
+    if err != nil {
+      return nil, errors.New("CreateUser: Could not create team in db\n"+ err.Error())
+    }
   } else {
-    num, err := UserDB.Coll.CountDocuments(UserDB.Context, bson.D{{"teamID", user.TeamID}})
+    num, err := UserDB.Coll.CountDocuments(UserDB.Context, bson.M{"teamID": user.TeamID})
     if err != nil {
       return nil, errors.New("CreateUser: Error while team lookup\n"+ err.Error())
     }
@@ -180,7 +185,7 @@ func CreateUser(user *CreatableUser) (SessID, error) {
       return nil, errors.New("CreateUser: Team already at max capacity")
     }
 
-    name, err := getTeamNameByTID(user.TeamID)
+    name, err := getTeamNameByID(user.TeamID)
     if err != nil {
       return nil, errors.New("CreateUser: could not get name of the team\n"+ err.Error())
     }
@@ -206,7 +211,7 @@ func CreateUser(user *CreatableUser) (SessID, error) {
 
 func UserAuthenticate(username, password string) (*User, error) {
   var user User
-  result := UserDB.Coll.FindOne(UserDB.Context, bson.D{{"user", username}, {"pass", password}})
+  result := UserDB.Coll.FindOne(UserDB.Context, bson.M{"user": username, "pass":password})
   if result == nil {
     return nil, errors.New("UserAuthenticate: Invalid Password")
   }

@@ -70,26 +70,37 @@ func InitDB(uri string) error {
 /// Get the result of a db quarry in a `out` object
 /// NOTE: `out` must be a pointer or Programme will panic !
 func (db *Collection) get(k string, v any, out any) error {
-  result := db.Coll.FindOne(UserDB.Context, bson.D{{k, v}})
+  result := db.Coll.FindOne(db.Context, bson.M{k: v})
   if result == nil {
     return errors.New("get: got a nil result")
   }
+
   if err := result.Err(); err != nil {
-    return err
+    return errors.New("DB.get: result error\n" + err.Error())
   }
-  return result.Decode(out)
+
+  if err := result.Decode(out); err != nil {
+    return errors.New("DB.get: decode error\n" + err.Error())
+  }
+
+  return nil
 }
 
 /// Check if a entry exists in a Collection
 func (db *Collection) exists(k string, v any) (bool, error) {
-  result := UserDB.Coll.FindOne(UserDB.Context, bson.D{{k, v}})
+  result := db.Coll.FindOne(db.Context, bson.M{k: v})
   if result == nil {
     return false, errors.New("exists: got a nil result")
   }
+
   err := result.Err()
+  if err == nil {
+    return true, nil
+  }
   if err == mongo.ErrNoDocuments {
     return false, nil
   }
-  return err == nil, err
+
+  return false, errors.New("DB.exists: FindOne error\n" + err.Error())
 }
 
