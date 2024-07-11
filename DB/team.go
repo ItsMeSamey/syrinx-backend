@@ -1,8 +1,7 @@
 package DB
 
 import (
-	"errors"
-	"log"
+  "errors"
 )
 
 /// Database sorted by TeamID
@@ -17,8 +16,6 @@ type Team struct {
 
 
 func getTeamNameByID(teamID TID) (string, error) {
-  log.Println("Team id is: ", teamID)
-
   var result Team
   if err := TeamDB.get("teamID", teamID, &result); err != nil {
     return "", errors.New("getTeamNameByID: DB.get failed\n"+err.Error())
