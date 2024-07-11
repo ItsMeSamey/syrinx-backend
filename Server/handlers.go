@@ -6,7 +6,6 @@ import (
   "io"
   "fmt"
   "net/http"
-  "time"
   "encoding/base64"
 
   "ccs.ctf/DB"
@@ -22,9 +21,9 @@ func bindJson(c *gin.Context, obj any) error {
   }
 
   /// Logging code
-  writer.Write([]byte("\n\n>>>>>>>>>>" + time.Now().String() + "\n>> body\n"))
+  writer.Write([]byte("\n\n>>>>>>>>>>\n>> body\n"))
   writer.Write(jsonData)
-  writer.Write([]byte("\n << body\n"))
+  writer.Write([]byte("\n<<\n"))
   /// Logging
 
   err = json.Unmarshal(jsonData, obj);
@@ -37,7 +36,6 @@ func bindJson(c *gin.Context, obj any) error {
 /// Easily extensible for logging
 func setJson(c *gin.Context, code int, json gin.H) {
   /// Logging code
-  writer.Write([]byte(">> response"))
   for key, value := range json {
     writer.Write([]byte(key))
     writer.Write([]byte(": "))
@@ -49,7 +47,7 @@ func setJson(c *gin.Context, code int, json gin.H) {
     }
     writer.Write([]byte("\n"))
   }
-  writer.Write([]byte("<< response\n<<<<<"))
+  writer.Write([]byte("<<<<<| "))
   /// Logging
 
   c.JSON(code, json)
