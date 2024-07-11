@@ -10,12 +10,14 @@ import (
 type Player struct {
   ID        ObjID       `bson:"_id,omitempty"`
   SessionID SessID      `bson:"sessionID"`
+  TeamID    TID         `bson:"teamID"`
   IN        chan []byte `bson:"-"`
 }
 
 type Lobby struct {
   ID    ObjID    `bson:"_id,omitempty"`
-  Players []Player `bson:"users"`
+  Players []Player `bson:"players"`
+  Teams   []Team `bson:"teams"`
 }
 
 func LobbyFromID(lobbyID ObjID) (*Lobby, error) {

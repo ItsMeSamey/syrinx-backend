@@ -6,9 +6,11 @@ import (
 type Question struct {
   ID         ObjID  `bson:"_id,omitempty"`
   Question   string `bson:"question"`
-  Points     int    `bson:"points"`
   Answer     string `bson:"answer"`
+  Points     int    `bson:"points"`
   Hint       string `bson:"hint"`
+  HintPoints int    `bson:"hintpoints"`
+  Level      int    `bson:"level"`
 }
 
 func QuestionFromID(_id string) (*Question, error) {
