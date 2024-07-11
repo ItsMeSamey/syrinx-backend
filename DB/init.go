@@ -4,6 +4,7 @@ import (
   "context"
   "errors"
   "log"
+  "os"
   
   "go.mongodb.org/mongo-driver/bson"
   "go.mongodb.org/mongo-driver/bson/primitive"
@@ -31,9 +32,21 @@ var (
   LobbyDB Collection
 ) 
 
+/// Initialize env vars
+var (
+  EMAIL_SENDER = os.Getenv("EMAIL_SENDER")
+  EMAIL_SENDER_PASSWORD = os.Getenv("EMAIL_SENDER_PASSWORD")
+)
+
 /// Initialize all Database's
 /// Programme MUST panic if this function errors as this is unrecoverable
 func InitDB(uri string) error {
+  if EMAIL_SENDER == "" {
+    return errors.New("Email sender does not exist")
+  }
+  if EMAIL_SENDER_PASSWORD == "" {
+    return errors.New("Email password not set")
+  }
   ctx := context.Background()
   client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
   if err != nil {

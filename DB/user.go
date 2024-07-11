@@ -3,7 +3,6 @@ package DB
 import (
   "crypto/rand"
   "errors"
-  "os"
   "time"
   
   "bytes"
@@ -25,11 +24,6 @@ type User struct {
   SessionID SessID `bson:"sessionID"`
   EmailReceived bool `bson:"mailReceived"`
 }
-
-var (
-  EMAIL_SENDER = os.Getenv("EMAIL_SENDER")
-  EMAIL_SENDER_PASSWORD = os.Getenv("EMAIL_SENDER_PASSWORD")
-)
 
 func genSessionID() (SessID, error) {
   times := 0
