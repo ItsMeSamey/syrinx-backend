@@ -20,7 +20,6 @@ type User struct {
   Email   string `bson:"mail"`
   Password  string `bson:"pass"`
   TeamID  TID  `bson:"teamID"`
-  TeamName  string  `bson:"teamName"`
   DiscordID string `bson:"discordID"`
   SessionID SessID `bson:"sessionID"`
   EmailReceived bool `bson:"mailReceived"`
