@@ -3,6 +3,7 @@ package DB
 import (
   "crypto/rand"
   "errors"
+  "os"
   "time"
   
   "bytes"
@@ -24,6 +25,11 @@ type User struct {
   SessionID SessID `bson:"sessionID"`
   EmailReceived bool `bson:"mailReceived"`
 }
+
+var (
+  EMAIL_SENDER = os.Getenv("EMAIL_SENDER")
+  EMAIL_SENDER_PASSWORD = os.Getenv("EMAIL_SENDER_PASSWORD")
+)
 
 func genSessionID() (SessID, error) {
   times := 0
@@ -75,7 +81,6 @@ func genTeamID() (TID, error) {
 
 /// blocking send email function
 func internalSendConfirmationEmail(user *User) error {
-  const from = "riteshkapoor1314@gmail.com"
   const subject = "Subject: Confirmation for participation in Syrinx\n"
   const mime = "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 
@@ -100,8 +105,8 @@ func internalSendConfirmationEmail(user *User) error {
 
   message := subject + mime + body.String()
 
-  err = smtp.SendMail("smtp.gmail.com:587", smtp.PlainAuth("", from, "cpkm fnxf rjjq tysy", "smtp.gmail.com"),
-                      from, []string{user.Email}, []byte(message),
+  err = smtp.SendMail("smtp.gmail.com:587", smtp.PlainAuth("", EMAIL_SENDER, EMAIL_SENDER_PASSWORD, "smtp.gmail.com"),
+                      EMAIL_SENDER, []string{user.Email}, []byte(message),
   )
   if err != nil {
     return err
