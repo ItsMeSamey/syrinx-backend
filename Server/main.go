@@ -73,7 +73,11 @@ func Start(ip string, prepend string) {
   if err != nil {
     log.Fatal("Could not create a log file.")
   }
-  writer = io.MultiWriter(file)
+  if os.Getenv("GIN_MODE") != "release" {
+    writer = io.MultiWriter(file, os.Stdout)
+  } else {
+    writer = io.Writer(file)
+  }
 
   /// Disable Color to make file readable
   gin.DisableConsoleColor()

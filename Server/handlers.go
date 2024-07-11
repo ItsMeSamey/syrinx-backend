@@ -1,11 +1,11 @@
 package Server
 
 import (
-  "encoding/json"
-  "errors"
   "io"
   "fmt"
+  "errors"
   "net/http"
+  "encoding/json"
   "encoding/base64"
 
   "ccs.ctf/DB"
@@ -21,9 +21,9 @@ func bindJson(c *gin.Context, obj any) error {
   }
 
   /// Logging code
-  writer.Write([]byte("\n\n>>>>>>>>>>\n>> body\n"))
+  writer.Write([]byte("\n\n>>>>>\n>> "))
   writer.Write(jsonData)
-  writer.Write([]byte("\n<<\n"))
+  writer.Write([]byte("\n<< "))
   /// Logging
 
   err = json.Unmarshal(jsonData, obj);
@@ -47,7 +47,7 @@ func setJson(c *gin.Context, code int, json gin.H) {
     }
     writer.Write([]byte("\n"))
   }
-  writer.Write([]byte("<<<<<| "))
+  writer.Write([]byte("<<<<< "))
   /// Logging
 
   c.JSON(code, json)
