@@ -50,7 +50,7 @@ func genSessionID() (SessID, error) {
   exists, err := UserDB.exists("sessionID", bytes)
   if exists {
     if times > 1024 {
-      return nil, errors.New("genSessionID: I'm a Bathtub, (if you are seeing this, contact us IMMEDIATELY!)")
+      return nil, errors.New("genSessionID: I'm a Bathtub")
     }
     times += 1
     goto start
@@ -74,7 +74,7 @@ func genTeamID() (TID, error) {
   exists, err := UserDB.exists("teamID", bytes)
   if exists {
     if times > 1024*1024 {
-      return nil, errors.New("genTeamID: OOPS, Lucky Draw!!, (if you are seeing this, contact us!)")
+      return nil, errors.New("genTeamID: OOPS, Lucky Draw!!")
     }
     times += 1
     goto start
@@ -131,15 +131,6 @@ func sendEmailAsync(user *CreatableUser) {
   var err error
   count := 0
 
-  if user.TeamName == nil || *user.TeamName == "" {
-    var team Team
-    err = TeamDB.get("teamID", user.TeamID, &team)
-    for err != nil && count < maxCount {
-      count += 1
-    }
-    user.TeamName = &(team.TeamName);
-  }
-
   err = internalSendConfirmationEmail(user)
   for err != nil && count < maxCount {
     count += 1
@@ -158,33 +149,42 @@ func sendEmailAsync(user *CreatableUser) {
 func CreateUser(user *CreatableUser) (SessID, error) {
 
   exists, err := UserDB.exists("user", user.Username)
-  if err != nil { return nil, err }
+  if err != nil { return nil, errors.New("CreateUser: Error while username lookup\n"+ err.Error()) }
   if exists { return nil, errors.New("CreateUser: User already exists") }
 
   exists, err = UserDB.exists("mail", user.Email)
-  if err != nil { return nil, err }
+  if err != nil { errors.New("CreateUser: Error while email lookup\n"+ err.Error()) }
   if exists { return nil, errors.New("CreateUser: Email cannot be reused") }
 
   exists, err = UserDB.exists("discordID", user.DiscordID)
-  if err != nil { return nil, err }
+  if err != nil { return nil, errors.New("CreateUser: Error while discordID lookup\n"+ err.Error()) }
   if exists { return nil, errors.New("CreateUser: Discord ID cannot be reused") }
 
   if user.TeamID == nil {
+    if user.TeamName == nil || *(user.TeamName) == "" {
+      return nil, errors.New("CreateUser: Team name needs to be specified")
+    }
     tid, err := genTeamID()
     if err != nil {
-      return nil, err
+      return nil, errors.New("CreateUser: could not generate teamID\n"+ err.Error())
     }
     user.TeamID = tid
   } else {
     num, err := UserDB.Coll.CountDocuments(UserDB.Context, bson.D{{"teamID", user.TeamID}})
     if err != nil {
-      return nil, err
+      return nil, errors.New("CreateUser: Error while team lookup\n"+ err.Error())
     }
     if num == 0 {
       return nil, errors.New("CreateUser: Team does not exist")
     } else if num >=4 {
       return nil, errors.New("CreateUser: Team already at max capacity")
     }
+
+    name, err := getTeamNameByTID(user.TeamID)
+    if err != nil {
+      return nil, errors.New("CreateUser: could not get name of the team\n"+ err.Error())
+    }
+    user.TeamName = &name;
   }
 
   SessionID, err := genSessionID()

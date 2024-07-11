@@ -33,18 +33,18 @@ func setErrorJson(c *gin.Context, code int, errstr string) {
 
 /// Function to call on signup request
 func signupHandler(c *gin.Context) {
-  var user DB.User
+  var user DB.CreatableUser
   if err := c.BindJSON(&user); err != nil {
     setErrorJson(c, http.StatusBadRequest, err.Error())
     return
   }
 
-  if  err := DB.CreateUser(&user); err != nil {
-    setErrorJson(c, http.StatusBadRequest, err.Error())
-    return
+  SessionID, err := DB.CreateUser(&user)
+  if err != nil {
+    setErrorJson(c, http.StatusInternalServerError, err.Error())
+  } else {
+    setSuccessJson(c, gin.H{"SessionID": SessionID, "TeamID": user.TeamID})
   }
-
-  setSuccessJson(c, gin.H{"SessionID": user.SessionID, "TeamID": user.TeamID})
 }
 
 /// Function to call for authantication
@@ -71,9 +71,8 @@ func authanticationHandler(c *gin.Context) {
 
 /// Function to call when user asks for their lobby
 func lobbyHandler(c *gin.Context) {
-  var user struct {
+  var user struct { SessionID DB.SessID }
 
-  }
   if err := c.BindJSON(&user); err != nil {
     setErrorJson(c, http.StatusBadRequest, err.Error())
     return
