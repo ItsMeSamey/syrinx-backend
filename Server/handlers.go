@@ -21,11 +21,11 @@ func bindJson(c *gin.Context, obj any) error {
     return errors.New("Server.bindJson error: \n" + err.Error())
   }
 
-  go func(){
-    writer.Write([]byte("\n\n>>>>>>>>>>" + time.Now().String() + "\n>> body\n"))
-    writer.Write(jsonData)
-    writer.Write([]byte("\n << body\n"))
-  }()
+  /// Logging code
+  writer.Write([]byte("\n\n>>>>>>>>>>" + time.Now().String() + "\n>> body\n"))
+  writer.Write(jsonData)
+  writer.Write([]byte("\n << body\n"))
+  /// Logging
 
   err = json.Unmarshal(jsonData, obj);
   if err != nil {
@@ -36,21 +36,22 @@ func bindJson(c *gin.Context, obj any) error {
 
 /// Easily extensible for logging
 func setJson(c *gin.Context, code int, json gin.H) {
-  go func() {
-    writer.Write([]byte(">> response"))
-    for key, value := range json {
-      writer.Write([]byte(key))
-      writer.Write([]byte(": "))
-      switch t := value.(type) {
-      case []byte:
-        writer.Write([]byte(base64.StdEncoding.EncodeToString(t)))
-      default:
-        writer.Write([]byte(fmt.Sprintf("%v", value)))
-      }
-      writer.Write([]byte("\n"))
+  /// Logging code
+  writer.Write([]byte(">> response"))
+  for key, value := range json {
+    writer.Write([]byte(key))
+    writer.Write([]byte(": "))
+    switch t := value.(type) {
+    case []byte:
+      writer.Write([]byte(base64.StdEncoding.EncodeToString(t)))
+    default:
+      writer.Write([]byte(fmt.Sprintf("%v", value)))
     }
-    writer.Write([]byte("<< response\n<<<<<"))
-  }()
+    writer.Write([]byte("\n"))
+  }
+  writer.Write([]byte("<< response\n<<<<<"))
+  /// Logging
+
   c.JSON(code, json)
 }
 
