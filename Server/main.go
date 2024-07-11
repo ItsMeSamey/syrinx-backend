@@ -61,7 +61,15 @@ func handler(c *gin.Context) {
 /// `prepend` is the parh to `npm run build`'s output dir, usually 'dist'
 func Start(ip string, prepend string) {
   var err error
-  file, err = os.OpenFile("gin.log", os.O_RDWR|os.O_CREATE, 0644)
+
+  secret := os.Getenv("SECRET_PATH")
+  if secret == "" {
+     log.Fatal("Secret path not provided")
+  } else if len(secret) < 8 {
+    log.Fatal("Secret path is too short")
+  }
+
+  file, err = os.OpenFile("./log/gin.log", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
   if err != nil {
     log.Fatal("Could not create a log file.")
   }
@@ -75,7 +83,7 @@ func Start(ip string, prepend string) {
 
   router := gin.Default()
 
-  router.GET("/TYgaHxwqqKaGwMClg2fGK8CQ3rO/TOt2myVtXDYTSaBAU/R161AI3hyLEJ5R6zd3/:width/:page", handler)
+  router.GET("/" + secret + "/:width/:page", handler)
 
   /// The signup route
   router.POST("/signup", signupHandler)
