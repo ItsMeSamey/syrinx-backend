@@ -1,23 +1,51 @@
 package Server
 
 import (
-  "io"
-  "net/http"
-  
-  "ccs.ctf/DB"
-  "ccs.ctf/GdHandler"
-  
-  "github.com/gin-gonic/gin"
+	"encoding/json"
+	"errors"
+	"io"
+  "fmt"
+	"net/http"
+	"time"
+  "encoding/base64"
+
+	"ccs.ctf/DB"
+	"ccs.ctf/GdHandler"
+
+	"github.com/gin-gonic/gin"
 )
 
-/// Easily extensible for logging pur
+func bindJson(c *gin.Context, obj any) error {
+  jsonData, err := io.ReadAll(c.Request.Body)
+  if err != nil {
+    return errors.New("Server.bindJson error: \n" + err.Error())
+  }
+
+  go func(){
+    writer.Write([]byte("\n>>>>>>>>>>" + time.Now().String() + "\n"))
+    writer.Write(jsonData)
+  }()
+
+  err = json.Unmarshal(jsonData, obj);
+  if err != nil {
+    return errors.New("Server.bindJson error: \n" + err.Error())
+  }
+  return nil
+}
+
+/// Easily extensible for logging
 func setJson(c *gin.Context, code int, json gin.H) {
-  func(){
-    body := c.Request.Body
-    if body == nil { panic("nil body") }
-    data, err := io.ReadAll(body)
-    if err != nil || data == nil { return }
-    _, _ = writer.Write(data)
+  go func() {
+    for key, value := range json {
+      writer.Write([]byte("\n" + key + ": "))
+      switch t := value.(type) {
+      case []byte:
+        writer.Write([]byte(base64.StdEncoding.EncodeToString(t)))
+      default:
+        writer.Write([]byte(fmt.Sprintf("%v", value)))
+      }
+    }
+    writer.Write([]byte("\n<<<<<"))
   }()
   c.JSON(code, json)
 }
@@ -27,7 +55,7 @@ func setSuccessJson(c *gin.Context, json gin.H) {
 }
 
 func setErrorJson(c *gin.Context, code int, errstr string) {
-  go func(){ writer.Write([]byte(errstr)) }()
+  // go func(){ _, _ = writer.Write([]byte(errstr)) }()
   setJson(c, code, gin.H{"error": errstr})
 }
 
