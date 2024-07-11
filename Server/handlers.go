@@ -1,18 +1,18 @@
 package Server
 
 import (
-	"encoding/json"
-	"errors"
-	"io"
+  "encoding/json"
+  "errors"
+  "io"
   "fmt"
-	"net/http"
-	"time"
+  "net/http"
+  "time"
   "encoding/base64"
 
-	"ccs.ctf/DB"
-	"ccs.ctf/GdHandler"
-
-	"github.com/gin-gonic/gin"
+  "ccs.ctf/DB"
+  "ccs.ctf/GdHandler"
+  
+  "github.com/gin-gonic/gin"
 )
 
 func bindJson(c *gin.Context, obj any) error {
@@ -22,8 +22,9 @@ func bindJson(c *gin.Context, obj any) error {
   }
 
   go func(){
-    writer.Write([]byte("\n>>>>>>>>>>" + time.Now().String() + "\n"))
+    writer.Write([]byte("\n\n>>>>>>>>>>" + time.Now().String() + "\n>> body\n"))
     writer.Write(jsonData)
+    writer.Write([]byte("\n << body\n"))
   }()
 
   err = json.Unmarshal(jsonData, obj);
@@ -36,16 +37,19 @@ func bindJson(c *gin.Context, obj any) error {
 /// Easily extensible for logging
 func setJson(c *gin.Context, code int, json gin.H) {
   go func() {
+    writer.Write([]byte(">> response"))
     for key, value := range json {
-      writer.Write([]byte("\n" + key + ": "))
+      writer.Write([]byte(key))
+      writer.Write([]byte(": "))
       switch t := value.(type) {
       case []byte:
         writer.Write([]byte(base64.StdEncoding.EncodeToString(t)))
       default:
         writer.Write([]byte(fmt.Sprintf("%v", value)))
       }
+      writer.Write([]byte("\n"))
     }
-    writer.Write([]byte("\n<<<<<"))
+    writer.Write([]byte("<< response\n<<<<<"))
   }()
   c.JSON(code, json)
 }
@@ -62,7 +66,7 @@ func setErrorJson(c *gin.Context, code int, errstr string) {
 /// Function to call on signup request
 func signupHandler(c *gin.Context) {
   var user DB.CreatableUser
-  if err := c.BindJSON(&user); err != nil {
+  if err := bindJson(c, &user); err != nil {
     setErrorJson(c, http.StatusBadRequest, err.Error())
     return
   }
@@ -78,7 +82,7 @@ func signupHandler(c *gin.Context) {
 /// Function to call for authantication
 func authanticationHandler(c *gin.Context) {
   var user DB.User
-  if err := c.BindJSON(&user); err != nil {
+  if err := bindJson(c, &user); err != nil {
     setErrorJson(c, http.StatusBadRequest, err.Error())
     return
   }
@@ -101,7 +105,7 @@ func authanticationHandler(c *gin.Context) {
 func lobbyHandler(c *gin.Context) {
   var user struct { SessionID DB.SessID }
 
-  if err := c.BindJSON(&user); err != nil {
+  if err := bindJson(c, &user); err != nil {
     setErrorJson(c, http.StatusBadRequest, err.Error())
     return
   }
