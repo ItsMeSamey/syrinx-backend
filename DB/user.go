@@ -15,23 +15,23 @@ import (
 
 // User struct to store user information
 type User struct {
-  ID    ObjID  `bson:"_id,omitempty"`
-  Username  string `bson:"user"`
-  Email   string `bson:"mail"`
-  Password  string `bson:"pass"`
-  TeamID  TID  `bson:"teamID"`
-  DiscordID string `bson:"discordID"`
-  SessionID SessID `bson:"sessionID"`
-  EmailReceived bool `bson:"mailReceived"`
+  ID            ObjID  `bson:"_id,omitempty"`
+  Username      string `bson:"user"`
+  Email         string `bson:"mail"`
+  Password      string `bson:"pass"`
+  TeamID        TID    `bson:"teamID"`
+  DiscordID     string `bson:"discordID"`
+  SessionID     SessID `bson:"sessionID"`
+  EmailReceived bool   `bson:"mailReceived"`
 }
 
 type CreatableUser struct {
-  Username  string `bson:"user"`
-  Email   string `bson:"mail"`
-  Password  string `bson:"pass"`
-  TeamID  TID  `bson:"teamID"`
-  TeamName *string `bson:"teamName"`
-  DiscordID string `bson:"discordID"`
+  Username  string  `bson:"user"`
+  Email     string  `bson:"mail"`
+  Password  string  `bson:"pass"`
+  TeamID    TID     `bson:"teamID"`
+  TeamName  *string `bson:"teamName"`
+  DiscordID string  `bson:"discordID"`
 }
 
 func genSessionID() (SessID, error) {
@@ -192,7 +192,15 @@ func CreateUser(user *CreatableUser) (SessID, error) {
 
   go sendEmailAsync(user)
 
-  _, err = UserDB.Coll.InsertOne(UserDB.Context, *user)
+  _, err = UserDB.Coll.InsertOne(UserDB.Context, &User{
+    Username     : user.Username,
+    Email        : user.Email,
+    Password     : user.Password,
+    TeamID       : user.TeamID,
+    DiscordID    : user.DiscordID,
+    SessionID    : SessionID,
+    EmailReceived: false,
+  })
   return SessionID, err
 }
 
