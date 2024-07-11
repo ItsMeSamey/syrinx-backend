@@ -20,38 +20,38 @@ func handler(c *gin.Context) {
 
   width, err := strconv.Atoi(c.Param("width"))
   if err != nil {
-    fmt.Fprintf(c.Writer, "Error: " + err.Error())
+    fmt.Fprintf(c.Writer, "Error: Width parsing error\n" + err.Error())
     return
   } else if width > 1024*1024*32 { // 32 mb size limit
-    fmt.Fprintf(c.Writer, "Error: " + strconv.Itoa(width) + " is larger than 32mb\n")
+    fmt.Fprintf(c.Writer, "Error: Width " + strconv.Itoa(width) + " is larger than 32mb")
     return
   }
 
   pageStr := c.Param("page")
   page, err := strconv.Atoi(pageStr)
   if err != nil {
-    fmt.Fprintf(c.Writer, "Error: " + err.Error())
+    fmt.Fprintf(c.Writer, "Error: Page parsing error\n" + err.Error())
     return
   }
 
-  start := page*width
-  if _, err = file.Seek(int64(start), io.SeekStart); err != nil {
-    fmt.Fprintf(c.Writer, "Error: " + err.Error())
+  if _, err = file.Seek(int64(page*width), io.SeekStart); err != nil {
+    fmt.Fprintf(c.Writer, "Error: Seek error\n" + err.Error())
     return
   }
 
   buffer := make([]byte, width)
-  _, err = file.Read(buffer)
-  if _, err = file.Seek(int64(start), io.SeekStart); err != nil {
-    fmt.Fprintf(c.Writer, "Error: " + err.Error())
+  n, err := file.Read(buffer)
+  if err != nil {
+    fmt.Fprintf(c.Writer, "Error: Read error\n" + err.Error())
     return
   }
+  buffer = buffer[:n]
 
   stat, err := file.Stat()
   if err != nil {
-    fmt.Fprint(c.Writer, "Error getting total number of pages:  ", err.Error(), "\n", string(buffer))
+    fmt.Fprint(c.Writer, "Error: getting file stats failed", err.Error(), "\n", string(buffer))
   } else {
-    fmt.Fprint(c.Writer, "Page ", pageStr, " of ", int64(math.Ceil( float64(stat.Size())/float64(width) )), "\n", string(buffer))
+    fmt.Fprint(c.Writer, "Page ", pageStr, "/", int64(math.Ceil( float64(stat.Size())/float64(width) )) - 1, "\n", string(buffer))
   }
 }
 
@@ -60,8 +60,8 @@ func handler(c *gin.Context) {
 ///
 /// `prepend` is the parh to `npm run build`'s output dir, usually 'dist'
 func Start(ip string, prepend string) {
-
-  file, err := os.Create("gin.log")
+  var err error
+  file, err = os.OpenFile("gin.log", os.O_RDWR|os.O_CREATE, 0644)
   if err != nil {
     log.Fatal("Could not create a log file.")
   }
