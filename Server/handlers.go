@@ -71,7 +71,9 @@ func authanticationHandler(c *gin.Context) {
 
 /// Function to call when user asks for their lobby
 func lobbyHandler(c *gin.Context) {
-  var user DB.User
+  var user struct {
+
+  }
   if err := c.BindJSON(&user); err != nil {
     setErrorJson(c, http.StatusBadRequest, err.Error())
     return

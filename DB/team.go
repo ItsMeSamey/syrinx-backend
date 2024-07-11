@@ -17,4 +17,7 @@ type Team struct {
 func getTeamNameByTID(id TID) (string, error) {
   return "", nil
 }
+func createTeam(user *CreatableUser) error {
+  return nil
+}
 

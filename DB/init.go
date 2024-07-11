@@ -27,8 +27,9 @@ var DATABASE *mongo.Database
 
 /// All the DB declarations
 var (
-  UserDB Collection
   QuestionDB Collection
+  UserDB Collection
+  TeamDB Collection
   LobbyDB Collection
 ) 
 
@@ -59,8 +60,9 @@ func InitDB(uri string) error {
   log.Println("Successfully Connected to MongoDB")
 
   DATABASE = client.Database("2024_ctf")
-  UserDB = Collection{DATABASE.Collection("users"), context.TODO()}
   QuestionDB = Collection{DATABASE.Collection("questions"), context.TODO()}
+  UserDB = Collection{DATABASE.Collection("users"), context.TODO()}
+  TeamDB = Collection{DATABASE.Collection("teams"), context.TODO()}
   LobbyDB = Collection{DATABASE.Collection("lobby"), context.TODO()}
   return nil
 }

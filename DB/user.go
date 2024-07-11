@@ -25,6 +25,15 @@ type User struct {
   EmailReceived bool `bson:"mailReceived"`
 }
 
+type CreatableUser struct {
+  Username  string `bson:"user"`
+  Email   string `bson:"mail"`
+  Password  string `bson:"pass"`
+  TeamID  TID  `bson:"teamID"`
+  TeamName *string `bson:"teamName"`
+  DiscordID string `bson:"discordID"`
+}
+
 func genSessionID() (SessID, error) {
   times := 0
   start:
@@ -74,7 +83,7 @@ func genTeamID() (TID, error) {
 }
 
 /// blocking send email function
-func internalSendConfirmationEmail(user *User) error {
+func internalSendConfirmationEmail(user *CreatableUser) error {
   const subject = "Subject: Confirmation for participation in Syrinx\n"
   const mime = "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 
@@ -85,13 +94,15 @@ func internalSendConfirmationEmail(user *User) error {
 
   var body bytes.Buffer
   err = tmpl.Execute(&body, struct {
-    Username  string
-    Email   string
-    TeamID string
+    JoinedMember string
+    Email        string
+    TeamName     string
+    TeamID       string
   }{
-    Username:  user.Username,
-    Email:   user.Email,
-    TeamID: hex.EncodeToString(user.TeamID[:]),
+    JoinedMember: user.Username,
+    Email:        user.Email,
+    TeamName:     *user.TeamName,
+    TeamID:       hex.EncodeToString(user.TeamID[:]),
   })
   if err != nil {
     return err
@@ -109,72 +120,80 @@ func internalSendConfirmationEmail(user *User) error {
   return nil
 }
 
-func internalUpdateEmailStatus(user *User) error {
+func internalUpdateEmailStatus(user *CreatableUser) error {
   _, err := UserDB.Coll.UpdateOne(UserDB.Context, bson.D{{"user", user.Username}}, bson.D{{"$set", bson.D{{"mailReceived", true}}}})
   return err
 }
 
 /// Must run this as Async
-func sendEmailAsync(user *User) {
+func sendEmailAsync(user *CreatableUser) {
+  const maxCount = 60*12
   var err error
+  count := 0
+
+  if user.TeamName == nil || *user.TeamName == "" {
+    var team Team
+    err = TeamDB.get("teamID", user.TeamID, &team)
+    for err != nil && count < maxCount {
+      count += 1
+    }
+    user.TeamName = &(team.TeamName);
+  }
 
   err = internalSendConfirmationEmail(user)
-  for err != nil {
+  for err != nil && count < maxCount {
+    count += 1
     time.Sleep(time.Minute)
     err = internalSendConfirmationEmail(user)
   }
 
   err = internalUpdateEmailStatus(user)
-  for err != nil {
+  for err != nil && count < maxCount {
+    count += 1
     time.Sleep(time.Minute)
     err = internalUpdateEmailStatus(user)
   }
 }
 
-func CreateUser(user *User) error {
-  user.ID = nil
-  user.SessionID = nil
+func CreateUser(user *CreatableUser) (SessID, error) {
 
   exists, err := UserDB.exists("user", user.Username)
-  if err != nil { return err }
-  if exists { return errors.New("CreateUser: User already exists") }
+  if err != nil { return nil, err }
+  if exists { return nil, errors.New("CreateUser: User already exists") }
 
   exists, err = UserDB.exists("mail", user.Email)
-  if err != nil { return err }
-  if exists { return errors.New("CreateUser: Email cannot be reused") }
+  if err != nil { return nil, err }
+  if exists { return nil, errors.New("CreateUser: Email cannot be reused") }
 
   exists, err = UserDB.exists("discordID", user.DiscordID)
-  if err != nil { return err }
-  if exists { return errors.New("CreateUser: Discord ID cannot be reused") }
+  if err != nil { return nil, err }
+  if exists { return nil, errors.New("CreateUser: Discord ID cannot be reused") }
 
   if user.TeamID == nil {
     tid, err := genTeamID()
     if err != nil {
-      return err
+      return nil, err
     }
     user.TeamID = tid
   } else {
-    exists, err := UserDB.exists("teamID", user.TeamID)
+    num, err := UserDB.Coll.CountDocuments(UserDB.Context, bson.D{{"teamID", user.TeamID}})
     if err != nil {
-      return err
+      return nil, err
     }
-    if !exists {
-      return errors.New("CreateUser: Team does not exist")
+    if num == 0 {
+      return nil, errors.New("CreateUser: Team does not exist")
+    } else if num >=4 {
+      return nil, errors.New("CreateUser: Team already at max capacity")
     }
   }
 
   SessionID, err := genSessionID()
-  if err != nil { return err }
-
-  user.SessionID = SessionID
+  if err != nil { return nil, err }
 
   go sendEmailAsync(user)
-  if err != nil {
-    return err
-  }
 
   _, err = UserDB.Coll.InsertOne(UserDB.Context, *user)
-  return err
+  return SessionID, err
 }
 
 func UserAuthenticate(username, password string) (*User, error) {

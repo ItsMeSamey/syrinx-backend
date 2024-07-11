@@ -1,222 +1,209 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to CCS Single Sign-On</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
-    @keyframes neon {
-      0% {
-        text-shadow: 0 0 5px #9a39fc, 0 0 20px #9a39fc, 0 0 30px #9a39fc, 0 0 40px #9a39fc, 0 0 70px #9a39fc, 0 0 80px #9a39fc, 0 0 100px #9a39fc, 0 0 150px #9a39fc;
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html dir="ltr" xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office" lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <meta name="x-apple-disable-message-reformatting">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta content="telephone=no" name="format-detection">
+    <title>New Message</title><!--[if (mso 16)]>
+      <style type="text/css">
+      a {text-decoration: none;}
+      </style>
+    <![endif]--><!--[if gte mso 9]><style>sup { font-size: 100% !important; }</style><![endif]--><!--[if gte mso 9]>
+      <xml>
+      <o:OfficeDocumentSettings>
+      <o:AllowPNG></o:AllowPNG>
+      <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+      </xml>
+    <![endif]--><!--[if !mso]><!-- -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,400i,700,700i" rel="stylesheet"><!--<![endif]-->
+    <style type="text/css">
+      .rollover:hover .rollover-first {
+        max-height:0px!important;
+        display:none!important;
       }
-
-      100% {
-        text-shadow: 0 0 0px #9a39fc, 0 0 10px #9a39fc, 0 0 15px #9a39fc, 0 0 20px #9a39fc, 0 0 35px #9a39fc, 0 0 40px #9a39fc, 0 0 50px #9a39fc, 0 0 75px #9a39fc;
+      .rollover:hover .rollover-second {
+        max-height:none!important;
+        display:block!important;
       }
-    }
-
-    body {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'VT323', sans-serif;
-      background: #000000;
-      color: #ffffff;
-      margin: 0;
-      padding: 20px;
-      text-align: center;
-    }
-
-    .container {
-      border: #9a39fc 2px solid;
-      border-radius: 10px;
-      position: relative;
-      width: 90%;
-      max-width: 500px;
-      color: #ffffff;
-      background-color: #120A20;
-      padding: 20px;
-    }
-
-    .top-right-logo {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      width: 80px;
-    }
-
-    .ccs-logo {
-      width: 15%;
-    }
-
-    .logo {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 20px;
-    }
-
-    .logo-text {
-      font-family: 'Press Start 2P', cursive;
-      font-size: 2.5rem;
-      animation: neon 1s infinite linear alternate;
-    }
-
-    .logo-presents {
-      font-size: 1rem;
-      color: #cccccc;
-      margin-bottom: 20px;
-    }
-
-    .header {
-      font-size: 1.5rem;
-      margin-top: 20px;
-    }
-
-    .content {
-      font-size: 1rem;
-      line-height: 1.5;
-      margin: 20px 0;
-    }
-
-    .details {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-      gap: 10px;
-      margin: 20px 0;
-    }
-
-    .detail-title {
-      font-weight: bold;
-      color: #cccccc;
-      text-decoration: underline dashed #9a39fc;
-      text-underline-offset: 5px;
-    }
-
-    .code {
-      font-size: 1.5rem;
-      color: #9a39fc;
-      margin: 0px 0;
-      background-color: #1e1e1e;
-    }
-
-    .benefits {
-      font-size: 1rem;
-      color: #6fb7bb;
-    }
-
-    .footer {
-      font-size: 0.875rem;
-      margin: 30px 0 10px;
-      color: #cccccc;
-    }
-
-    a {
-      color: #9a39fc;
-      text-decoration: none;
-    }
-
-    .learn-more-link {
-      margin-top: 10px;
-      display: inline-block;
-      padding: 10px 20px;
-      border: 2px solid #6fb7bb;
-      border-radius: 5px;
-      color: #6fb7bb;
-      text-decoration: none;
-      transition: background-color 0.3s, color 0.3s;
-    }
-
-    .learn-more-link:hover {
-      background-color: #6fb7bb;
-      color: #1e1e1e;
-    }
-
-    .bar {
-      width: 100%;
-      height: 10px;
-      background-color: #6fb7bb;
-    }
-
-    @media (min-width: 600px) {
-      .top-right-logo {
-        width: 100px;
+      .rollover span {
+        font-size:0px;
       }
-
-      .logo-text {
-        font-size: 4rem;
+      u + .body img ~ div div {
+        display:none;
       }
-
-      .logo-presents {
-        font-size: 1.5rem;
-        margin-bottom: 30px;
+      #outlook a {
+        padding:0;
       }
-
-      .header {
-        font-size: 2.5rem;
+      span.MsoHyperlink,
+      span.MsoHyperlinkFollowed {
+        color:inherit;
+        mso-style-priority:99;
       }
-
-      .content {
-        font-size: 1.2rem;
+      a.es-button {
+        mso-style-priority:100!important;
+        text-decoration:none!important;
       }
-
-      .details {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      a[x-apple-data-detectors],
+      #MessageViewBody a {
+        color:inherit!important;
+        text-decoration:none!important;
+        font-size:inherit!important;
+        font-family:inherit!important;
+        font-weight:inherit!important;
+        line-height:inherit!important;
       }
-    }
-
-    @media (min-width: 768px) {
-      .header {
-        font-size: 3rem;
+      .es-desk-hidden {
+        display:none;
+        float:left;
+        overflow:hidden;
+        width:0;
+        max-height:0;
+        line-height:0;
+        mso-hide:all;
       }
-
-      .content {
-        font-size: 1.3rem;
+      .es-button-border:hover > a.es-button {
+        color:#ffffff!important;
       }
-
-      .details {
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      }
-    }
-  </style>
-</head>
-
-<body>
-  <div class="container">
-    <div class="logo">
-      <img src="https://syrinx.vercel.app/ccs.png" alt="CCS Logo" class="ccs-logo">
-      <span class="logo-presents">
-        presents
-      </span>
-      <span class="logo-text">
-        SYRINX
-      </span>
+      @media only screen and (max-width:600px) {h1 { font-size:20px!important; text-align:center } h2 { font-size:18px!important; text-align:center } h3 { font-size:16px!important; text-align:center } .es-m-p0r { padding-right:0px!important } .es-p-default { } *[class="gmail-fix"] { display:none!important } p, a { line-height:150%!important } h1, h1 a { line-height:120%!important } h2, h2 a { line-height:120%!important } h3, h3 a { line-height:120%!important } h4, h4 a { line-height:120%!important } h5, h5 a { line-height:120%!important } h6, h6 a { line-height:120%!important } .es-header-body p { } .es-content-body p { } .es-footer-body p { } .es-infoblock p { } h4 { font-size:24px!important; text-align:left } h5 { font-size:20px!important; text-align:left } h6 { font-size:16px!important; text-align:left } .es-header-body h1 a, .es-content-body h1 a, .es-footer-body h1 a { font-size:20px!important } .es-header-body h2 a, .es-content-body h2 a, .es-footer-body h2 a { font-size:18px!important } .es-header-body h3 a, .es-content-body h3 a, .es-footer-body h3 a { font-size:16px!important } .es-header-body h4 a, .es-content-body h4 a, .es-footer-body h4 a { font-size:24px!important } .es-header-body h5 a, .es-content-body h5 a, .es-footer-body h5 a { font-size:20px!important } .es-header-body h6 a, .es-content-body h6 a, .es-footer-body h6 a { font-size:16px!important } .es-menu td a { font-size:16px!important } .es-header-body p, .es-header-body a { font-size:12px!important } .es-content-body p, .es-content-body a { font-size:12px!important } .es-footer-body p, .es-footer-body a { font-size:12px!important } .es-infoblock p, .es-infoblock a { font-size:12px!important } .es-m-txt-c, .es-m-txt-c h1, .es-m-txt-c h2, .es-m-txt-c h3, .es-m-txt-c h4, .es-m-txt-c h5, .es-m-txt-c h6 { text-align:center!important } .es-m-txt-r, .es-m-txt-r h1, .es-m-txt-r h2, .es-m-txt-r h3, .es-m-txt-r h4, .es-m-txt-r h5, .es-m-txt-r h6 { text-align:right!important } .es-m-txt-j, .es-m-txt-j h1, .es-m-txt-j h2, .es-m-txt-j h3, .es-m-txt-j h4, .es-m-txt-j h5, .es-m-txt-j h6 { text-align:justify!important } .es-m-txt-l, .es-m-txt-l h1, .es-m-txt-l h2, .es-m-txt-l h3, .es-m-txt-l h4, .es-m-txt-l h5, .es-m-txt-l h6 { text-align:left!important } .es-m-txt-r img, .es-m-txt-c img, .es-m-txt-l img { display:inline!important } .es-m-txt-r .rollover:hover .rollover-second, .es-m-txt-c .rollover:hover .rollover-second, .es-m-txt-l .rollover:hover .rollover-second { display:inline!important } .es-m-txt-r .rollover span, .es-m-txt-c .rollover span, .es-m-txt-l .rollover span { line-height:0!important; font-size:0!important } .es-spacer { display:inline-table } a.es-button, button.es-button { font-size:12px!important; padding:10px 20px 10px 20px!important; line-height:120%!important } a.es-button, button.es-button, .es-button-border { display:inline-block!important } .es-m-fw, .es-m-fw.es-fw, .es-m-fw .es-button { display:block!important } .es-m-il, .es-m-il .es-button, .es-social, .es-social td, .es-menu { display:inline-block!important } .es-adaptive table, .es-left, .es-right { width:100%!important } .es-content table, .es-header table, .es-footer table, .es-content, .es-footer, .es-header { width:100%!important; max-width:600px!important } .adapt-img { width:100%!important; height:auto!important } .es-mobile-hidden, .es-hidden { display:none!important } .es-desk-hidden { width:auto!important; overflow:visible!important; float:none!important; max-height:inherit!important; line-height:inherit!important; display:table-row!important } tr.es-desk-hidden { display:table-row!important } table.es-desk-hidden { display:table!important } td.es-desk-menu-hidden { display:table-cell!important } .es-menu td { width:1%!important } table.es-table-not-adapt, .esd-block-html table { width:auto!important } .h-auto { height:auto!important } .img-6861 { width:100px!important } }
+      @media screen and (max-width:384px) {.mail-message-content { width:414px!important } }
+    </style>
+  </head>
+  <body data-new-gr-c-s-loaded="14.1187.0" class="body" style="width:100%;height:100%;padding:0;Margin:0">
+    <div dir="ltr" class="es-wrapper-color" lang="en" style="background-color:#F7F7F7"><!--[if gte mso 9]>
+        <v:background xmlns:v="urn:schemas-microsoft-com:vml" fill="t">
+        <v:fill type="tile" color="#f7f7f7"></v:fill>
+        </v:background>
+    <![endif]-->
+    <table width="100%" cellspacing="0" cellpadding="0" class="es-wrapper" role="none" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;padding:0;Margin:0;width:100%;height:100%;background-repeat:repeat;background-position:center top;background-color:#F7F7F7">
+      <tr>
+        <td valign="top" style="padding:0;Margin:0">
+          <table align="center" cellpadding="0" cellspacing="0" class="es-header" role="none" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;width:100%;table-layout:fixed !important;background-color:transparent;background-repeat:repeat;background-position:center top">
+            <tr>
+              <td align="center" style="padding:0;Margin:0">
+                <table cellpadding="0" cellspacing="0" align="center" class="es-header-body" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;background-color:transparent;width:600px" role="none">
+                  <tr>
+                    <td bgcolor="#362f79" align="left" style="padding:20px;Margin:0;background-color:#362f79;border-radius:10px 10px 0px 0px">
+                      <table cellspacing="0" width="100%" cellpadding="0" role="none" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px">
+                        <tr>
+                          <td valign="top" align="center" class="es-m-p0r" style="padding:0;Margin:0;width:560px">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:separate;border-spacing:0px;border-radius:1px" role="presentation">
+                              <tr>
+                                <td align="center" style="padding:0;Margin:0;font-size:0"><img src="https://fnbwguk.stripocdn.email/content/guids/CABINET_9e6e4a36290795cbd21b293a7b6eae0cbc862fc21160d8cabc846095cd28550b/images/ccs.png" alt width="100" class="img-6861" style="display:block;font-size:14px;border:0;outline:none;text-decoration:none"></td>
+                              </tr>
+                            </table></td>
+                        </tr>
+                      </table></td>
+                  </tr>
+                </table></td>
+            </tr>
+          </table>
+          <table align="center" cellspacing="0" cellpadding="0" class="es-content" role="none" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;width:100%;table-layout:fixed !important">
+            <tr>
+              <td align="center" style="padding:0;Margin:0">
+                <table align="center" cellspacing="0" cellpadding="0" bgcolor="#ffffff" class="es-content-body" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;background-color:#ffffff;border-top:1px solid #4c8aa7;border-right:1px solid #4c8aa7;border-left:1px solid #4c8aa7;width:600px;border-bottom:1px solid #4c8aa7" role="none">
+                  <tr>
+                    <td align="left" bgcolor="#000000" style="padding:0;Margin:0;padding-top:30px;padding-right:20px;padding-left:20px;background-color:#000000">
+                      <table cellspacing="0" width="100%" cellpadding="0" role="none" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px">
+                        <tr>
+                          <td align="left" style="padding:0;Margin:0;width:558px">
+                            <table cellspacing="0" width="100%" cellpadding="0" role="presentation" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px">
+                              <tr>
+                                <td align="center" class="es-m-txt-c" style="padding:0;Margin:0;padding-top:30px;padding-bottom:20px"><h1 style="Margin:0;font-family:georgia, times, 'times new roman', serif;mso-line-height-rule:exactly;letter-spacing:0;font-size:50px;font-style:normal;font-weight:normal;line-height:36px;color:#7b52ee"><strong>SYRINX</strong></h1><h1 style="Margin:0;font-family:georgia, times, 'times new roman', serif;mso-line-height-rule:exactly;letter-spacing:0;font-size:30px;font-style:normal;font-weight:normal;line-height:46px;color:#7b52ee"><br>Hi {{.JoinedMember}}<br>Thankyou for registering in syrinx</h1></td>
+                              </tr>
+                              <tr>
+                                <td align="center" style="padding:0;Margin:0;padding-right:15px;padding-left:35px;font-size:0px"><a target="_blank" href="https://syrinx.netlify.app/bg.jpg" style="mso-line-height-rule:exactly;text-decoration:underline;color:#3D7781;font-size:14px"><img alt width="508" src="https://fnbwguk.stripocdn.email/content/guids/CABINET_9e6e4a36290795cbd21b293a7b6eae0cbc862fc21160d8cabc846095cd28550b/images/bg_P6R.jpeg" class="adapt-img" style="display:block;font-size:14px;border:0;outline:none;text-decoration:none"></a></td>
+                              </tr>
+                              <tr>
+                                <td align="center" class="es-m-txt-c" style="padding:0;Margin:0;padding-top:30px;padding-bottom:20px"><h1 style="Margin:0;font-family:georgia, times, 'times new roman', serif;mso-line-height-rule:exactly;letter-spacing:0;font-size:26px;font-style:normal;font-weight:normal;line-height:31px;color:#7b52ee">You have been registered to team</h1><h1 style="Margin:0;font-family:georgia, times, 'times new roman', serif;mso-line-height-rule:exactly;letter-spacing:0;font-size:40px;font-style:normal;font-weight:700;line-height:56px;color:#7b52ee">{{.TeamName}}</h1><h1 style="Margin:0;font-family:georgia, times, 'times new roman', serif;mso-line-height-rule:exactly;letter-spacing:0;font-size:24px;font-style:normal;font-weight:normal;line-height:29px;color:#7b52ee">of  Team Id: {{.TeamID}} </h1></td>
+                              </tr>
+                              <tr>
+                                <td align="center" style="padding:0;Margin:0"><span class="es-button-border" style="border-style:solid;border-color:#2CB543;background:#7b52ee;border-width:0px;display:inline-block;border-radius:30px;width:auto"><a href="https://discord.com/invite/YCe6vc2AeE" target="_blank" class="es-button" style="mso-style-priority:100 !important;text-decoration:none !important;mso-line-height-rule:exactly;color:#FFFFFF;font-size:18px;padding:15px 30px 15px 30px;display:inline-block;background:#7b52ee;border-radius:30px;font-family:arial, 'helvetica neue', helvetica, sans-serif;font-weight:normal;font-style:normal;line-height:22px;width:auto;text-align:center;letter-spacing:0;mso-padding-alt:0;mso-border-alt:10px solid #7b52ee"><!--[if !mso]><!-- --><img src="https://fnbwguk.stripocdn.email/content/guids/CABINET_9e6e4a36290795cbd21b293a7b6eae0cbc862fc21160d8cabc846095cd28550b/images/discord256.png" alt="icon" width="27" align="absmiddle" style="display:inline-block;font-size:14px;border:0;outline:none;text-decoration:none;vertical-align:middle;margin-right:10px"><!--<![endif]-->Join The Discord Server</a></span></td>
+                              </tr>
+                              <tr>
+                                <td align="center" style="padding:20px;Margin:0;font-size:0">
+                                  <table cellpadding="0" cellspacing="0" border="0" width="100%" height="100%" role="presentation" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px">
+                                    <tr>
+                                      <td style="padding:0;Margin:0;width:100%;margin:0px;border-bottom:2px solid #7b52ee;background:unset;height:1px"></td>
+                                    </tr>
+                                  </table></td>
+                              </tr>
+                              <tr>
+                                <td align="center" class="es-m-txt-c" style="padding:0;Margin:0;padding-top:5px;padding-bottom:5px;font-size:0">
+                                  <table border="0" width="100px" height="100%" cellpadding="0" cellspacing="0" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;display:inline-table;width:35% !important" role="presentation">
+                                    <tr>
+                                      <td style="padding:0;Margin:0;width:100%;margin:0px;border-bottom:2px solid #000000;background:none;height:1px"></td>
+                                    </tr>
+                                  </table></td>
+                              </tr>
+                            </table></td>
+                        </tr>
+                      </table></td>
+                  </tr>
+                  <tr>
+                    <td align="left" bgcolor="#000000" style="Margin:0;padding-top:10px;padding-right:40px;padding-bottom:40px;padding-left:40px;background-color:#000000">
+                      <table cellpadding="0" cellspacing="0" width="100%" role="none" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px">
+                        <tr>
+                          <td align="center" valign="top" style="padding:0;Margin:0;width:518px">
+                            <table cellspacing="0" width="100%" cellpadding="0" role="presentation" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px">
+                              <tr>
+                                <td height="36" align="center" class="h-auto" style="padding:0;Margin:0"><p style="Margin:0;mso-line-height-rule:exactly;font-family:'courier new', courier, 'lucida sans typewriter', 'lucida typewriter', monospace;line-height:36px;letter-spacing:0;color:#7b52ee;font-size:18px">The Hunt Begins in</p></td>
+                              </tr>
+                              <tr>
+                                <td align="center" style="padding:0;Margin:0"><img height="56" width="322" alt class="adapt-img" src="https://cdt-timer.stripocdn.email/api/v1/images/gUc2eHvkGxS2FlmzN_Opzux75FU8p4huXsrDZeQtNnM?token=d7ed8a44-baac-4498-a20c-c62edf6b3976&amp;l=1720638591247" style="display:block;font-size:14px;border:0;outline:none;text-decoration:none"></td>
+                              </tr>
+                              <tr>
+                                <td align="center" style="padding:20px;Margin:0;font-size:0">
+                                  <table border="0" width="100%" height="100%" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px">
+                                    <tr>
+                                      <td style="padding:0;Margin:0;height:1px;width:100%;margin:0px;border-bottom:2px dashed #cdcada;background:unset"></td>
+                                    </tr>
+                                  </table></td>
+                              </tr>
+                              <tr>
+                                <td align="center" style="padding:0;Margin:0"><span class="es-button-border" style="border-style:solid;border-color:#2CB543;background:#7b52ee;border-width:0px;display:inline-block;border-radius:30px;width:auto"><a href="https://gadot-one.vercel.app/" target="_blank" class="es-button" style="mso-style-priority:100 !important;text-decoration:none !important;mso-line-height-rule:exactly;color:#FFFFFF;font-size:18px;padding:15px 30px 15px 30px;display:inline-block;background:#7b52ee;border-radius:30px;font-family:roboto, 'helvetica neue', helvetica, arial, sans-serif;font-weight:normal;font-style:normal;line-height:22px;width:auto;text-align:center;letter-spacing:0;mso-padding-alt:0;mso-border-alt:10px solid #7b52ee"><!--[if !mso]><!-- --><img align="absmiddle" src="https://fnbwguk.stripocdn.email/content/guids/CABINET_9e6e4a36290795cbd21b293a7b6eae0cbc862fc21160d8cabc846095cd28550b/images/ccs.png" alt="icon" width="24" style="display:inline-block;font-size:14px;border:0;outline:none;text-decoration:none;vertical-align:middle;margin-right:10px"><!--<![endif]-->Try The Demo</a></span></td>
+                              </tr>
+                            </table></td>
+                        </tr>
+                      </table></td>
+                  </tr>
+                </table></td>
+            </tr>
+          </table>
+          <table align="center" cellpadding="0" cellspacing="0" class="es-footer" role="none" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;width:100%;table-layout:fixed !important;background-color:transparent;background-repeat:repeat;background-position:center top">
+            <tr>
+              <td align="center" style="padding:0;Margin:0">
+                <table cellpadding="0" cellspacing="0" align="center" class="es-footer-body" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;background-color:transparent;width:600px" role="none">
+                  <tr>
+                    <td align="left" bgcolor="#362f79" style="Margin:0;padding-right:20px;padding-left:20px;padding-top:25px;padding-bottom:25px;background-color:#362f79;border-radius:0px 0px 10px 10px">
+                      <table cellpadding="0" cellspacing="0" width="100%" role="none" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px">
+                        <tr>
+                          <td align="left" style="padding:0;Margin:0;width:560px">
+                            <table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px">
+                              <tr>
+                                <td align="center" style="padding:0;Margin:0;font-size:0">
+                                  <table cellpadding="0" cellspacing="0" class="es-table-not-adapt es-social" role="presentation" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px">
+                                    <tr>
+                                      <td valign="top" align="center" style="padding:0;Margin:0;padding-right:10px"><a href="https://www.facebook.com/CCSTU" target="_blank" style="mso-line-height-rule:exactly;text-decoration:underline;color:#CCCCCC;font-size:14px"><img alt="Fb" width="32" title="Facebook" src="https://fnbwguk.stripocdn.email/content/assets/img/social-icons/circle-white/facebook-circle-white.png" style="display:block;font-size:14px;border:0;outline:none;text-decoration:none"></a></td>
+                                      <td valign="top" align="center" style="padding:0;Margin:0;padding-right:10px"><a href="https://x.com/ccstiet" target="_blank" style="mso-line-height-rule:exactly;text-decoration:underline;color:#CCCCCC;font-size:14px"><img alt="X" width="32" title="X" src="https://fnbwguk.stripocdn.email/content/assets/img/social-icons/circle-white/x-circle-white.png" style="display:block;font-size:14px;border:0;outline:none;text-decoration:none"></a></td>
+                                      <td align="center" valign="top" style="padding:0;Margin:0;padding-right:10px"><a target="_blank" href="https://www.instagram.com/ccs_tiet/" style="mso-line-height-rule:exactly;text-decoration:underline;color:#CCCCCC;font-size:14px"><img alt="Inst" width="32" title="Instagram" src="https://fnbwguk.stripocdn.email/content/assets/img/social-icons/circle-white/instagram-circle-white.png" style="display:block;font-size:14px;border:0;outline:none;text-decoration:none"></a></td>
+                                      <td align="center" valign="top" style="padding:0;Margin:0;padding-right:10px"><a target="_blank" href="https://www.youtube.com/@ccstiet5176" style="mso-line-height-rule:exactly;text-decoration:underline;color:#CCCCCC;font-size:14px"><img alt="Yt" width="32" title="Youtube" src="https://fnbwguk.stripocdn.email/content/assets/img/social-icons/circle-white/youtube-circle-white.png" style="display:block;font-size:14px;border:0;outline:none;text-decoration:none"></a></td>
+                                      <td align="center" valign="top" style="padding:0;Margin:0;padding-right:10px"><a target="_blank" href="https://www.linkedin.com/company/ccs-tiet/mycompany/" style="mso-line-height-rule:exactly;text-decoration:underline;color:#CCCCCC;font-size:14px"><img title="LinkedIn" src="https://fnbwguk.stripocdn.email/content/assets/img/social-icons/circle-white/linkedin-circle-white.png" alt="In" width="32" style="display:block;font-size:14px;border:0;outline:none;text-decoration:none"></a></td>
+                                      <td valign="top" align="center" style="padding:0;Margin:0"><a href="https://discord.com/invite/YCe6vc2AeE" target="_blank" style="mso-line-height-rule:exactly;text-decoration:underline;color:#CCCCCC;font-size:14px"><img alt="Discord" width="32" title="Discord" src="https://fnbwguk.stripocdn.email/content/assets/img/messenger-icons/circle-white/discort-circle-white.png" style="display:block;font-size:14px;border:0;outline:none;text-decoration:none"></a></td>
+                                    </tr>
+                                  </table></td>
+                              </tr>
+                            </table></td>
+                        </tr>
+                      </table></td>
+                  </tr>
+                </table></td>
+            </tr>
+          </table></td>
+      </tr>
+    </table>
     </div>
-    <div class="header">{{.Username}}, welcome to
-      <span style="color:#cccccc; text-decoration: underline dashed #9a39fc; text-underline-offset: 10px;">
-        {{.TeamID}}
-      </span>
-    </div>
-    <div class="content">
-      You have successfully joined the team {{.TeamID}} for SYRINX.
-    </div>
-    <div class="content">
-
-      If there is any discrepancy in the above information, please contact CCS at <a
-        href="mailto:ccs@thapar.edu">ccs@thapar.edu</a>.
-    </div>
-
-    <div class="footer">
-      Best regards,<br>
-      Team CCS<br>
-      Learn. Code. Collaborate.
-    </div>
-  </div>
-</body>
-
+  </body>
 </html>
