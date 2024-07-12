@@ -9,9 +9,10 @@ import (
   "go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var lobbies map[primitive.ObjectID]*Lobby
-var lobbiesMutex sync.RWMutex = sync.RWMutex{}
-
+var (
+  lobbies map[primitive.ObjectID]*Lobby
+  lobbiesMutex sync.RWMutex = sync.RWMutex{}
+)
 
 //! WARNING: DO NOT MESS WITH THIS UNLESS YOU KNOW WHAT YOU ARE DOING
 /// Automatically close the lobby when there is no one in it
