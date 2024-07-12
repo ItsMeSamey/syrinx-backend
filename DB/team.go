@@ -2,6 +2,8 @@ package DB
 
 import (
   "errors"
+	"go.mongodb.org/mongo-driver/bson"
+  "go.mongodb.org/mongo-driver/mongo"
 )
 
 /// Database sorted by TeamID
@@ -11,7 +13,21 @@ type Team struct {
   Points   int            `bson:"points"`
   // Question id and time in unix milliseconds
   Solved   map[int16]int64 `bson:"solved"`
+  // Question id and whether hint is used
+  Hint     map[int16]bool `bson:"hint"`
   Level    int            `bson:"level"`
+}
+func GetUserTeam(teamID TID) (*Team, error) {
+  var team Team
+  err := TeamDB.Coll.FindOne(TeamDB.Context, bson.M{"_id": teamID}).Decode(&team)
+  if err != nil {
+      if err == mongo.ErrNoDocuments {
+          return nil, errors.New("no team found with the given teamID")
+      }
+      return nil, err
+  }
+  
+  return &team, nil
 }
 
 

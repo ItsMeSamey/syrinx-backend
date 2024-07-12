@@ -9,7 +9,7 @@ import (
   "encoding/hex"
   "html/template"
   "net/smtp"
-  
+  "go.mongodb.org/mongo-driver/mongo"
   "go.mongodb.org/mongo-driver/bson"
 )
 
@@ -33,6 +33,33 @@ type CreatableUser struct {
   TeamName  *string `bson:"teamName"`
   DiscordID string  `bson:"discordID"`
 }
+
+func GetUserFromSession(sessionID SessID) (*User, error) {
+  var user User
+  err := UserDB.Coll.FindOne(UserDB.Context, bson.M{"sessionID": sessionID}).Decode(&user)
+  if err != nil {
+      if err == mongo.ErrNoDocuments {
+          return nil, errors.New("no user found with the given sessionID")
+      }
+      return nil, err
+  }
+  
+  return &user, nil
+}
+
+// func GetTeamIDFromSessionID(sessionID SessID) (TID, error) {
+//   var user User
+//   err := UserDB.Coll.FindOne(UserDB.Context, bson.M{"sessionID": sessionID}).Decode(&user)
+//   if err != nil {
+//       if err == mongo.ErrNoDocuments {
+//           return TID(""), errors.New("no user found with the given sessionID")
+//       }
+//       return TID(""), err
+//   }
+
+//   return user.TeamID, nil
+// }
+
 
 func genSessionID() (SessID, error) {
   times := 0
