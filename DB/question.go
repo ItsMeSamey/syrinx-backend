@@ -10,7 +10,7 @@ type Question struct {
   Question   string `bson:"question"`
   Answer     string `bson:"answer"`
   Points     int    `bson:"points"`
-  Hint       string `bson:"hint"`
+  Hint       string `bson:"hint"` //need to change it to array of hints
   HintPoints int    `bson:"hintpoints"`
   Level      int    `bson:"level"`
 }
@@ -35,3 +35,24 @@ func genQuestionID() (int16, error) {
   return ID, err
 }
 
+func postQuestion(ques *Question) (string, error){
+  ques.ID=-1
+  exists,err:=QuestionDB.exists("question",ques.Question)
+  if exists{
+    return "Question already exists",nil
+  }
+  ques.ID, _ = genQuestionID()
+  if ques.ID==-1{
+    return "Error in generating question ID",nil
+  }
+  _,err=QuestionDB.Coll.InsertOne(QuestionDB.Context,&Question{
+    ID:         ques.ID,
+    Question:   ques.Question,
+    Answer:     ques.Answer,
+    Points:     ques.Points,
+    Hint:       ques.Hint,
+    HintPoints: ques.HintPoints,
+    Level:      1,
+  })
+  return "ok",err
+}
