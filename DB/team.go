@@ -11,14 +11,15 @@ type Team struct {
   Points   int            `bson:"points"`
   // Question id and time in unix milliseconds
   Solved   map[int16]int64 `bson:"solved"`
+  // Question id and whether hint is used
+  // Hint     map[int16]bool `bson:"hint"`
   Level    int            `bson:"level"`
 }
 
-
-func getTeamNameByID(teamID TID) (string, error) {
+func TeamNameByID(teamID TID) (string, error) {
   var result Team
   if err := TeamDB.get("teamID", teamID, &result); err != nil {
-    return "", errors.New("getTeamNameByID: DB.get failed\n"+err.Error())
+    return "", errors.New("TeamNameByID: DB.get failed\n"+err.Error())
   }
   return result.TeamName, nil
 }

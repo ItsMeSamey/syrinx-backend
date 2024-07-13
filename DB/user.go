@@ -9,7 +9,7 @@ import (
   "encoding/hex"
   "html/template"
   "net/smtp"
-  
+  // "go.mongodb.org/mongo-driver/mongo"
   "go.mongodb.org/mongo-driver/bson"
 )
 
@@ -50,7 +50,7 @@ func genSessionID() (SessID, error) {
   exists, err := UserDB.exists("sessionID", bytes)
   if exists {
     if times > 1024 {
-      return nil, errors.New("genSessionID: Lucky Error!!")
+      return nil, errors.New("genSessionID: Lucky Error")
     }
     times += 1
     goto start
@@ -185,7 +185,7 @@ func CreateUser(user *CreatableUser) (SessID, error) {
       return nil, errors.New("CreateUser: Team already at max capacity")
     }
 
-    name, err := getTeamNameByID(user.TeamID)
+    name, err := TeamNameByID(user.TeamID)
     if err != nil {
       return nil, errors.New("CreateUser: could not get name of the team\n"+ err.Error())
     }
@@ -213,7 +213,7 @@ func UserAuthenticate(username, password string) (*User, error) {
   var user User
   result := UserDB.Coll.FindOne(UserDB.Context, bson.M{"user": username, "pass":password})
   if result == nil {
-    return nil, errors.New("UserAuthenticate: Invalid Password")
+    return nil, errors.New("UserAuthenticate: Invalid Password/Username")
   }
   err := result.Decode(&user)
   if err != nil {
