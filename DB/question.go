@@ -2,7 +2,7 @@ package DB
 
 import (
 	"errors"
-	"math/rand"
+	// "math/rand"
 	"strings"
 	"go.mongodb.org/mongo-driver/bson"
 	"time"
@@ -29,20 +29,20 @@ func QuestionFromID(_id int16) (*Question, error) {
 	return &question, nil
 }
 
-func genQuestionID() (int16, error) {
-	times := 0
-start:
-	ID := int16(rand.Intn(32767))
-	exists, err := QuestionDB.exists("questionID", ID)
-	if exists {
-		if times > 1024 {
-			return 0, errors.New("genQuestionID: Lucky Error!!")
-		}
-		times += 1
-		goto start
-	}
-	return ID, err
-}
+// func genQuestionID() (int16, error) {
+// 	times := 0
+// start:
+// 	ID := int16(rand.Intn(32767))
+// 	exists, err := QuestionDB.exists("questionID", ID)
+// 	if exists {
+// 		if times > 1024 {
+// 			return 0, errors.New("genQuestionID: Lucky Error!!")
+// 		}
+// 		times += 1
+// 		goto start
+// 	}
+// 	return ID, err
+// }
 
 func postQuestion(ques *Question) (string, error) {
 	ques.ID = -1
@@ -50,10 +50,10 @@ func postQuestion(ques *Question) (string, error) {
 	if exists {
 		return "Question already exists", nil
 	}
-	ques.ID, _ = genQuestionID()
-	if ques.ID == -1 {
-		return "Error in generating question ID", nil
-	}
+	//ques.ID, _ = genQuestionID()
+	// if ques.ID == -1 {
+	// 	return "Error in generating question ID", nil
+	// }
 	_, err = QuestionDB.Coll.InsertOne(QuestionDB.Context, &Question{
 		ID:         ques.ID,
 		Question:   ques.Question,
@@ -182,8 +182,8 @@ func GetHint(quesid int16,userSessID SessID)(string,error){
 	return question.Hint,nil
 }
 
-// retun points
-// remove genquestionid that will be set by us as 1 2 3 and so on
+// retun points - done
+// remove genquestionid that will be set by us as 1 2 3 and so on - done
 // findone to get -done
 // teamfromid-done
 // remove user -done
