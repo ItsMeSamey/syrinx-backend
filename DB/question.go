@@ -15,13 +15,29 @@ type Question struct {
   Level      int    `bson:"level"`
 }
 
-func QuestionFromID(_id int16) (*Question, error) {
+func QuestionFromID(ID int16) (*Question, error) {
   var question Question
-  err := QuestionDB.get("questionID", _id, &question)
+  err := QuestionDB.get("questionID", ID, &question)
   if err != nil {
     return nil, errors.New("QuestionFromID: DB.get error\n" + err.Error())
   }
   return &question, nil
+}
+
+func TryHardGetQuestionFromID(ID int16, maxTries byte) (*Question, error) {
+  var tries byte = 0
+
+  getQuestion:
+  question, err := QuestionFromID(ID)
+  if err != nil {
+    if tries > maxTries {
+      return nil, errors.New("TryHardGetQuestionFromID: Error in DB.exists, Max Tries reached\n" + err.Error())
+    }
+    tries += 1;
+    goto getQuestion
+  }
+
+  return question, nil
 }
 
 func postQuestion(ques *Question) error {
@@ -30,28 +46,20 @@ func postQuestion(ques *Question) error {
     return errors.New("postQuestion: Question already exists")
   }
   if err!=nil{
-    return errors.New("postQuestion: Error in DB.exists" + err.Error())
+    return errors.New("postQuestion: Error in DB.exists\n" + err.Error())
   }
   _, err = QuestionDB.Coll.InsertOne(QuestionDB.Context, ques)
   if err != nil {
-    return errors.New("postQuestion: Error occurred while adding question to database" + err.Error())
+    return errors.New("postQuestion: Error occurred while adding question to database\n" + err.Error())
   }
   return nil
 }
 
 //check ans =ques id ,userid, answer 
 func CheckAnswer(ID int16, Answer string) (int, error) {
-  const maxTries byte = 10
-  var tries byte = 0
-
-  getQuestion:
-  question, err := QuestionFromID(ID)
+  question, err := TryHardGetQuestionFromID(ID, 10)
   if err != nil {
-    if tries > maxTries {
-      return 0, errors.New("QuestionFromID: Error in DB.exists" + err.Error())
-    }
-    tries += 1;
-    goto getQuestion
+    return 0, errors.New("GetHint: Error while getting Question\n" + err.Error())
   }
 
   if strings.EqualFold(question.Answer, Answer) {
@@ -62,17 +70,9 @@ func CheckAnswer(ID int16, Answer string) (int, error) {
 }
 
 func GetHint(ID int16) (int, string, error) {
-  const maxTries byte = 10
-  var tries byte = 0
-
-  getQuestion:
-  question, err := QuestionFromID(ID)
+  question, err := TryHardGetQuestionFromID(ID, 10)
   if err != nil {
-    if tries > maxTries {
-      return 0, "", errors.New("QuestionFromID: Error in DB.exists" + err.Error())
-    }
-    tries += 1;
-    goto getQuestion
+    return 0, "", errors.New("GetHint: Error while getting Question\n" + err.Error())
   }
 
   return question.HintPoints, question.Hint, nil
