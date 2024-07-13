@@ -77,7 +77,7 @@ func genSessionID() (SessID, error) {
   exists, err := UserDB.exists("sessionID", bytes)
   if exists {
     if times > 1024 {
-      return nil, errors.New("genSessionID: Lucky Error!!")
+      return nil, errors.New("genSessionID: Lucky Error")
     }
     times += 1
     goto start

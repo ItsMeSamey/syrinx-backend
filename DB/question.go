@@ -68,43 +68,64 @@ func postQuestion(ques *Question) (string, error) {
 
 
 //check ans =ques id ,userid, answer 
-func CheckAnswer(_id int16, userSessID SessID, givenAnswer string) (bool, error){
-  question, err := QuestionFromID(_id)
-  if err != nil {
-      return false, err
-  }
-  correct_answer := question.Answer
-  isCorrect := strings.EqualFold(givenAnswer, correct_answer)
-  if isCorrect {
-	user,err:=UserFromSessionID(userSessID)
+func CheckAnswer(_id int16, userSessID SessID, givenAnswer string) (int, error) {
+    question, err := QuestionFromID(_id)
+    if err != nil {
+        return 0, err
+    }
+    correct_answer := question.Answer
+    isCorrect := strings.EqualFold(givenAnswer, correct_answer)
+    if !isCorrect {
+        return 0, nil
+    }
+    
+    user, err := UserFromSessionID(userSessID)
+    if err != nil {
+        return 0,  err
+    }
     if user == nil {
-		return false, errors.New("CheckAnswer: User not found")
-	}
-	team,err:=UserByTeam(user.TeamID)
-	if err!=nil{
-		return false,err
-	}
-	if team.Solved[_id]>=0{
-		return false,errors.New("Question already solved")
-	}
-	team.Solved[_id]=time.Now().Unix()
-	_, err = TeamDB.Coll.UpdateOne(
-    TeamDB.Context,
-    bson.M{"_id": team.TeamID},
-    bson.M{"$set": bson.M{"Solved": team.Solved}},
+        return 0, errors.New("CheckAnswer: User not found")
+    }
+    
+    team, err := UserByTeam(user.TeamID)
+    if err != nil {
+        return 0, err
+    }
+    if team.Solved[_id] >= 0 {
+        return 0, errors.New("Question already solved")
+    }
+    team.Solved[_id] = time.Now().Unix()
+    
+    newPoints := len(team.Solved) * 100 * team.Level
+    
+    _, err = TeamDB.Coll.UpdateOne(
+        TeamDB.Context,
+        bson.M{"_id": team.TeamID},
+        bson.M{
+            "$set": bson.M{"Solved": team.Solved},
+            "$inc": bson.M{"points": newPoints},
+        },
     )
-	if err != nil {
-		return false, err
-	}
-	err=UpdateTeamPoints(team.TeamID,len(team.Solved)*100*team.Level)
-	if err!=nil{
-		return false,err
-	}
-	return true,nil
-	}
-
-
+    if err != nil {
+        return 0, err
+    }
+    
+    // Fetch the updated team document to get the new points
+    var updatedTeam struct {
+        Points int `bson:"points"`
+    }
+    err = TeamDB.Coll.FindOne(
+        TeamDB.Context,
+        bson.M{"_id": team.TeamID},
+    ).Decode(&updatedTeam)
+    if err != nil {
+        return 0, err
+    }
+    
+    return updatedTeam.Points, nil
 }
+
+
 
 //get just ques
 func GetQuestionString(_id int16)(string,error){
@@ -117,14 +138,7 @@ func GetQuestionString(_id int16)(string,error){
 
 
 //point 
-func UpdateTeamPoints(teamID TID, newPoints int) error {
-    _, err := TeamDB.Coll.UpdateOne(
-        TeamDB.Context,
-        bson.M{"_id": teamID},
-        bson.M{"$set": bson.M{"points": newPoints}},
-    )
-    return err
-}
+
 
 //get hint
 func GetHint(quesid int16,userSessID SessID)(string,error){
