@@ -40,8 +40,7 @@ func (lobby *Lobby) wsHandler(c *gin.Context) {
     if err != nil {
       log.Println("wsHandler: Read error:", err)
       continue
-    }
-    if messageType == websocket.CloseMessage {
+    } else if messageType == websocket.CloseMessage {
       _ = conn.Close()
       return
     }
@@ -51,7 +50,7 @@ func (lobby *Lobby) wsHandler(c *gin.Context) {
         break
       }
     } else {
-      _ = conn.WriteMessage(messageType, []byte{0})
+      _ = conn.WriteMessage(websocket.BinaryMessage, []byte{0})
     }
   }
 
