@@ -3,17 +3,11 @@ package DB
 import (
   "crypto/rand"
   "errors"
-  "time"
-  
-  "bytes"
-  "encoding/hex"
-  "html/template"
-  "net/smtp"
-  // "go.mongodb.org/mongo-driver/mongo"
+
   "go.mongodb.org/mongo-driver/bson"
 )
 
-// User struct to store user information
+/// User struct to store user information
 type User struct {
   ID            ObjID  `bson:"_id,omitempty"`
   Username      string `bson:"user"`
@@ -25,6 +19,7 @@ type User struct {
   EmailReceived bool   `bson:"mailReceived"`
 }
 
+/// When we are creating users, we need a different struct than the above
 type CreatableUser struct {
   Username  string  `bson:"user"`
   Email     string  `bson:"mail"`
@@ -34,6 +29,7 @@ type CreatableUser struct {
   DiscordID string  `bson:"discordID"`
 }
 
+/// Generates a unique SessionID
 func genSessionID() (SessID, error) {
   times := 0
   start:
@@ -58,6 +54,7 @@ func genSessionID() (SessID, error) {
   return ID, err
 }
 
+/// Generates a unique TeamID
 func genTeamID() (TID, error) {
   times := 0
   start:
@@ -82,72 +79,8 @@ func genTeamID() (TID, error) {
   return ID, err
 }
 
-/// blocking send email function
-func internalSendConfirmationEmail(user *CreatableUser) error {
-  const subject = "Subject: Confirmation for participation in Syrinx\n"
-  const mime = "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-
-  tmpl, err := template.ParseFiles("email_template.html")
-  if err != nil {
-    return err
-  }
-
-  var body bytes.Buffer
-  err = tmpl.Execute(&body, struct {
-    JoinedMember string
-    Email        string
-    TeamName     string
-    TeamID       string
-  }{
-    JoinedMember: user.Username,
-    Email:        user.Email,
-    TeamName:     *user.TeamName,
-    TeamID:       hex.EncodeToString(user.TeamID[:]),
-  })
-  if err != nil {
-    return err
-  }
-
-  message := subject + mime + body.String()
-
-  err = smtp.SendMail("smtp.gmail.com:587", smtp.PlainAuth("", EMAIL_SENDER, EMAIL_SENDER_PASSWORD, "smtp.gmail.com"),
-                      EMAIL_SENDER, []string{user.Email}, []byte(message),
-  )
-  if err != nil {
-    return err
-  }
-
-  return nil
-}
-
-func internalUpdateEmailStatus(user *CreatableUser) error {
-  _, err := UserDB.Coll.UpdateOne(UserDB.Context, bson.M{"user": user.Username}, bson.M{"$set": bson.M{"mailReceived": true}})
-  return err
-}
-
-/// Must run this as Async
-func sendEmailAsync(user *CreatableUser) {
-  const maxCount = 60
-  var err error
-  count := 0
-
-  err = internalSendConfirmationEmail(user)
-  for err != nil && count < maxCount {
-    count += 1
-    time.Sleep(time.Minute)
-    err = internalSendConfirmationEmail(user)
-  }
-
-  err = internalUpdateEmailStatus(user)
-  for err != nil && count < maxCount {
-    count += 1
-    time.Sleep(time.Minute)
-    err = internalUpdateEmailStatus(user)
-  }
-}
-
+/// Function to create a user in DB
 func CreateUser(user *CreatableUser) (SessID, error) {
-
   exists, err := UserDB.exists("user", user.Username)
   if err != nil { return nil, errors.New("CreateUser: Error while username lookup\n"+ err.Error()) }
   if exists { return nil, errors.New("CreateUser: User already exists") }
@@ -209,6 +142,7 @@ func CreateUser(user *CreatableUser) (SessID, error) {
   return SessionID, err
 }
 
+/// The user authantication function
 func UserAuthenticate(username, password string) (*User, error) {
   var user User
   result := UserDB.Coll.FindOne(UserDB.Context, bson.M{"user": username, "pass":password})
@@ -222,6 +156,7 @@ func UserAuthenticate(username, password string) (*User, error) {
   return &user, err
 }
 
+/// Get Uset object from session id
 func UserFromSessionID(SessionID SessID) (*User, error) {
   var user User
   return &user, UserDB.get("sessionID", SessionID, &user)
