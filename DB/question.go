@@ -183,6 +183,7 @@ func GetHint(quesid int16,userSessID SessID)(string,error){
 }
 
 // retun points
+// remove genquestionid that will be set by us as 1 2 3 and so on
 // findone to get -done
 // teamfromid-done
 // remove user -done
