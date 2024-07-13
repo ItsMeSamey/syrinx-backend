@@ -169,4 +169,4 @@ func GetHint(quesid int16,userSessID SessID)(string,error){
 // retun points
 // findone to get
 // teamfromid
-// remove user
+// remove user -done
