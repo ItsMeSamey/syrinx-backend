@@ -9,7 +9,7 @@ import (
   "encoding/hex"
   "html/template"
   "net/smtp"
-  "go.mongodb.org/mongo-driver/mongo"
+  // "go.mongodb.org/mongo-driver/mongo"
   "go.mongodb.org/mongo-driver/bson"
 )
 
@@ -212,7 +212,7 @@ func CreateUser(user *CreatableUser) (SessID, error) {
       return nil, errors.New("CreateUser: Team already at max capacity")
     }
 
-    name, err := getTeamNameByID(user.TeamID)
+    name, err := TeamNameByID(user.TeamID)
     if err != nil {
       return nil, errors.New("CreateUser: could not get name of the team\n"+ err.Error())
     }

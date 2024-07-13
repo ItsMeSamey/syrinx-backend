@@ -76,11 +76,11 @@ func CheckAnswer(_id int16, userSessID SessID, givenAnswer string) (bool, error)
   correct_answer := question.Answer
   isCorrect := strings.EqualFold(givenAnswer, correct_answer)
   if isCorrect {
-	user,err:=GetUserFromSession(userSessID)
+	user,err:=UserFromSessionID(userSessID)
     if user == nil {
 		return false, errors.New("CheckAnswer: User not found")
 	}
-	team,err:=GetUserTeam(user.TeamID)
+	team,err:=UserByTeam(user.TeamID)
 	if err!=nil{
 		return false,err
 	}
@@ -89,9 +89,9 @@ func CheckAnswer(_id int16, userSessID SessID, givenAnswer string) (bool, error)
 	}
 	team.Solved[_id]=time.Now().Unix()
 	_, err = TeamDB.Coll.UpdateOne(
-      TeamDB.Context,
-      bson.M{"_id": team.TeamID},
-      bson.M{"$set": bson.M{"Solved": team.Solved}},
+    TeamDB.Context,
+    bson.M{"_id": team.TeamID},
+    bson.M{"$set": bson.M{"Solved": team.Solved}},
     )
 	if err != nil {
 		return false, err
@@ -102,6 +102,8 @@ func CheckAnswer(_id int16, userSessID SessID, givenAnswer string) (bool, error)
 	}
 	return true,nil
 	}
+
+
 }
 
 //get just ques
@@ -130,11 +132,11 @@ func GetHint(quesid int16,userSessID SessID)(string,error){
   	if err != nil {
 		  return "", err
   	}
-	user,err:=GetUserFromSession(userSessID)
+	user,err:=UserFromSessionID(userSessID)
 	if user == nil {
 		return "", errors.New("GetHint: User not found")
 	}
-	team,err:=GetUserTeam(user.TeamID)
+	team,err:=UserByTeam(user.TeamID)
 	if err!=nil{
 		return "",err
 	}
@@ -168,5 +170,5 @@ func GetHint(quesid int16,userSessID SessID)(string,error){
 
 // retun points
 // findone to get
-// teamfromid
+// teamfromid-done
 // remove user -done

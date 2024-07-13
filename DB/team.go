@@ -17,7 +17,7 @@ type Team struct {
   Hint     map[int16]bool `bson:"hint"`
   Level    int            `bson:"level"`
 }
-func GetUserTeam(teamID TID) (*Team, error) {
+func UserByTeam(teamID TID) (*Team, error) {
   var team Team
   err := TeamDB.Coll.FindOne(TeamDB.Context, bson.M{"_id": teamID}).Decode(&team)
   if err != nil {
@@ -31,7 +31,7 @@ func GetUserTeam(teamID TID) (*Team, error) {
 }
 
 
-func getTeamNameByID(teamID TID) (string, error) {
+func TeamNameByID(teamID TID) (string, error) {
   var result Team
   if err := TeamDB.get("teamID", teamID, &result); err != nil {
     return "", errors.New("getTeamNameByID: DB.get failed\n"+err.Error())
