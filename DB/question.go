@@ -45,10 +45,12 @@ func QuestionFromID(_id int16) (*Question, error) {
 // }
 
 func postQuestion(ques *Question) (string, error) {
-	ques.ID = -1
 	exists, err := QuestionDB.exists("question", ques.Question)
 	if exists {
 		return "Question already exists", nil
+	}
+	if err!=nil{
+		return "",err 
 	}
 	//ques.ID, _ = genQuestionID()
 	// if ques.ID == -1 {
