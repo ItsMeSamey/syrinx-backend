@@ -67,10 +67,8 @@ func InitDB(uri string) error {
   return nil
 }
 
-/// Get the result of a db quarry in a `out` object
-/// NOTE: `out` must be a pointer or Programme will panic !
-func (db *Collection) get(k string, v any, out any) error {
-  result := db.Coll.FindOne(db.Context, bson.M{k: v})
+func (db *Collection) getBson(bsonM bson.M, out any) error {
+  result := db.Coll.FindOne(db.Context, bsonM)
   if result == nil {
     return errors.New("get: got a nil result")
   }
@@ -84,6 +82,12 @@ func (db *Collection) get(k string, v any, out any) error {
   }
 
   return nil
+}
+
+/// Get the result of a db quarry in a `out` object
+/// NOTE: `out` must be a pointer or Programme will panic !
+func (db *Collection) get(k string, v any, out any) error {
+  return db.getBson(bson.M{k: v}, out);
 }
 
 /// Check if a entry exists in a Collection
