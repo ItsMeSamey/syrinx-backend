@@ -34,18 +34,18 @@ type CreatableUser struct {
   DiscordID string  `bson:"discordID"`
 }
 
-func GetUserFromSession(sessionID SessID) (*User, error) {
-  var user User
-  err := UserDB.Coll.FindOne(UserDB.Context, bson.M{"sessionID": sessionID}).Decode(&user)
-  if err != nil {
-      if err == mongo.ErrNoDocuments {
-          return nil, errors.New("no user found with the given sessionID")
-      }
-      return nil, err
-  }
+// func GetUserFromSession(sessionID SessID) (*User, error) {
+//   var user User
+//   err := UserDB.Coll.FindOne(UserDB.Context, bson.M{"sessionID": sessionID}).Decode(&user)
+//   if err != nil {
+//       if err == mongo.ErrNoDocuments {
+//           return nil, errors.New("no user found with the given sessionID")
+//       }
+//       return nil, err
+//   }
   
-  return &user, nil
-}
+//   return &user, nil
+// }
 
 // func GetTeamIDFromSessionID(sessionID SessID) (TID, error) {
 //   var user User
