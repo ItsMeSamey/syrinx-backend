@@ -34,33 +34,6 @@ type CreatableUser struct {
   DiscordID string  `bson:"discordID"`
 }
 
-// func GetUserFromSession(sessionID SessID) (*User, error) {
-//   var user User
-//   err := UserDB.Coll.FindOne(UserDB.Context, bson.M{"sessionID": sessionID}).Decode(&user)
-//   if err != nil {
-//       if err == mongo.ErrNoDocuments {
-//           return nil, errors.New("no user found with the given sessionID")
-//       }
-//       return nil, err
-//   }
-  
-//   return &user, nil
-// }
-
-// func GetTeamIDFromSessionID(sessionID SessID) (TID, error) {
-//   var user User
-//   err := UserDB.Coll.FindOne(UserDB.Context, bson.M{"sessionID": sessionID}).Decode(&user)
-//   if err != nil {
-//       if err == mongo.ErrNoDocuments {
-//           return TID(""), errors.New("no user found with the given sessionID")
-//       }
-//       return TID(""), err
-//   }
-
-//   return user.TeamID, nil
-// }
-
-
 func genSessionID() (SessID, error) {
   times := 0
   start:
@@ -240,7 +213,7 @@ func UserAuthenticate(username, password string) (*User, error) {
   var user User
   result := UserDB.Coll.FindOne(UserDB.Context, bson.M{"user": username, "pass":password})
   if result == nil {
-    return nil, errors.New("UserAuthenticate: Invalid Password")
+    return nil, errors.New("UserAuthenticate: Invalid Password/Username")
   }
   err := result.Decode(&user)
   if err != nil {
