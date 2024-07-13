@@ -75,7 +75,6 @@ func CheckAnswer(_id int16, userSessID SessID, givenAnswer string) (bool, error)
   }
   correct_answer := question.Answer
   isCorrect := strings.EqualFold(givenAnswer, correct_answer)
-  
   if isCorrect {
 	user,err:=GetUserFromSession(userSessID)
     if user == nil {
@@ -167,3 +166,7 @@ func GetHint(quesid int16,userSessID SessID)(string,error){
 	return question.Hint,nil
 }
 
+// retun points
+// findone to get
+// teamfromid
+// remove user
