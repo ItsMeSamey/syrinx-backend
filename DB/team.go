@@ -19,14 +19,13 @@ type Team struct {
 }
 func UserByTeam(teamID TID) (*Team, error) {
   var team Team
-  err := TeamDB.Coll.FindOne(TeamDB.Context, bson.M{"_id": teamID}).Decode(&team)
+  err := TeamDB.get("teamID", teamID, &team)
   if err != nil {
       if err == mongo.ErrNoDocuments {
           return nil, errors.New("no team found with the given teamID")
       }
       return nil, err
   }
-  
   return &team, nil
 }
 
