@@ -1,11 +1,8 @@
 package DB
 
 import (
-  "time"
   "errors"
   "strings"
-
-  "go.mongodb.org/mongo-driver/bson"
 )
 
 type Question struct {
@@ -43,108 +40,41 @@ func postQuestion(ques *Question) error {
 }
 
 //check ans =ques id ,userid, answer 
-func CheckAnswer(_id int16, userSessID SessID, givenAnswer string) (int, error) {
-  question, err := QuestionFromID(_id)
+func CheckAnswer(ID int16, Answer string) (int, error) {
+  const maxTries byte = 10
+  var tries byte = 0
+
+  getQuestion:
+  question, err := QuestionFromID(ID)
   if err != nil {
-    return 0, err
-  }
-  correct_answer := question.Answer
-  isCorrect := strings.EqualFold(givenAnswer, correct_answer)
-  if !isCorrect {
-    return 0, nil
-  }
-
-  user, err := UserFromSessionID(userSessID)
-  if err != nil {
-    return 0,  err
-  }
-  if user == nil {
-    return 0, errors.New("CheckAnswer: User not found")
-  }
-
-  team, err := UserByTeam(user.TeamID)
-  if err != nil {
-    return 0, err
-  }
-  if team.Solved[_id] >= 0 {
-    return 0, errors.New("Question already solved")
-  }
-  team.Solved[_id] = time.Now().Unix()
-
-  newPoints := len(team.Solved) * 100 * team.Level
-
-  _, err = TeamDB.Coll.UpdateOne(
-    TeamDB.Context,
-    bson.M{"_id": team.TeamID},
-    bson.M{
-      "$set": bson.M{"Solved": team.Solved},
-      "$inc": bson.M{"points": newPoints},
-    },
-    )
-  if err != nil {
-    return 0, err
-  }
-
-  // Fetch the updated team document to get the new points
-  var updatedTeam struct {
-    Points int `bson:"points"`
-  }
-  err = TeamDB.Coll.FindOne(
-    TeamDB.Context,
-    bson.M{"_id": team.TeamID},
-    ).Decode(&updatedTeam)
-  if err != nil {
-    return 0, err
-  }
-
-  return updatedTeam.Points, nil
-}
-
-//point 
-//get hint
-func GetHint(quesid int16,userSessID SessID)(string,error){
-  question, err := QuestionFromID(quesid)
-    if err != nil {
-      return "", err
+    if tries > maxTries {
+      return 0, errors.New("QuestionFromID: Error in DB.exists" + err.Error())
     }
-  user,err:=UserFromSessionID(userSessID)
-  if user == nil {
-    return "", errors.New("GetHint: User not found")
-  }
-  team,err:=UserByTeam(user.TeamID)
-  if err!=nil{
-    return "",err
-  }
-  if team.Hint[quesid]==true{
-    return question.Hint,nil
-  }
-  if team.Points<30{
-    return "",errors.New("Teri Aukat Nahi Hai!!!")
-  }
-   _, err = TeamDB.Coll.UpdateOne(
-    TeamDB.Context,
-    bson.M{"_id": team.TeamID},
-    bson.M{"$set": bson.M{"points": team.Points-30}},
-)
-   if err != nil {
-    return "", err
+    tries += 1;
+    goto getQuestion
   }
 
-  team.Hint[quesid]=true
-  _, err = TeamDB.Coll.UpdateOne(
-    TeamDB.Context,
-    bson.M{"_id": team.TeamID},
-    bson.M{"$set": bson.M{"Hint": team.Hint}},
-  )
-  if err != nil {
-    return "", err
+  if strings.EqualFold(question.Answer, Answer) {
+    return question.HintPoints, nil
   }
-
-  return question.Hint,nil
+  
+  return 0, nil
 }
 
-// return points - done
-// remove genquestionid that will be set by us as 1 2 3 and so on - done
-// findone to get -done
-// teamfromid-done
-// remove user -done
+func GetHint(ID int16) (int, string, error) {
+  const maxTries byte = 10
+  var tries byte = 0
+
+  getQuestion:
+  question, err := QuestionFromID(ID)
+  if err != nil {
+    if tries > maxTries {
+      return 0, "", errors.New("QuestionFromID: Error in DB.exists" + err.Error())
+    }
+    tries += 1;
+    goto getQuestion
+  }
+
+  return question.HintPoints, question.Hint, nil
+}
+
