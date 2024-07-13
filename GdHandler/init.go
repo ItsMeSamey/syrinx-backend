@@ -1,12 +1,13 @@
 package GdHandler
 
 import (
-  "sync"
-  "time"
-  
-  "ccs.ctf/DB"
-  "github.com/gin-gonic/gin"
-  "go.mongodb.org/mongo-driver/bson/primitive"
+	"sync"
+	"time"
+
+	"ccs.ctf/DB"
+	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var (
@@ -14,10 +15,23 @@ var (
   lobbiesMutex sync.RWMutex = sync.RWMutex{}
 )
 
+/// Function to make an empty lobby struct
+func makeLobby(lobby *DB.Lobby) *Lobby {
+  return &Lobby {
+    ID: lobby.ID,
+    players: lobby.Players,
+    playercount: 0,
+    playerMutex: sync.RWMutex{},
+    upgrader: websocket.Upgrader{ ReadBufferSize:  1024, WriteBufferSize: 1024 },
+    deadtime: 0,
+  }
+}
+
+
 //! WARNING: DO NOT MESS WITH THIS UNLESS YOU KNOW WHAT YOU ARE DOING
 /// Automatically close the lobby when there is no one in it
-/// This function bocks "forever" (a long as lobby exists),
-/// and thus most likely should be async
+/// This function bocks (a long as lobby exists),
+/// and probably should be async
 func watchdog(lobby *Lobby) {
   lobby.deadtime = 0
   sleepTime := (30 + (lobby.ID[0]&31))

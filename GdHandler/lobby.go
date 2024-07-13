@@ -20,17 +20,7 @@ type Lobby struct {
   deadtime    byte
 }
 
-func makeLobby(lobby *DB.Lobby) *Lobby {
-  return &Lobby {
-    ID: lobby.ID,
-    players: lobby.Players,
-    playercount: 0,
-    playerMutex: sync.RWMutex{},
-    upgrader: websocket.Upgrader{ ReadBufferSize:  1024, WriteBufferSize: 1024 },
-    deadtime: 0,
-  }
-}
-
+/// The lobby handling function responsible for connecting players to their respective lobby
 func (lobby *Lobby) wsHandler(c *gin.Context) {
   conn, err := lobby.upgrader.Upgrade(c.Writer, c.Request, nil)
   if err != nil {
@@ -57,11 +47,11 @@ func (lobby *Lobby) wsHandler(c *gin.Context) {
     }
     myIndex, err = lobby.getUserAuth(messageType, message)
     if err == nil {
-      if conn.WriteMessage(messageType, []byte("0Success")) == nil {
+      if conn.WriteMessage(websocket.BinaryMessage, []byte{0, myIndex}) == nil {
         break
       }
     } else {
-      _ = conn.WriteMessage(messageType, []byte("1Authentication Error"))
+      _ = conn.WriteMessage(messageType, []byte{0})
     }
   }
 
