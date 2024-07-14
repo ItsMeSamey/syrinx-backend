@@ -24,14 +24,14 @@ func QuestionFromID(ID int16) (*Question, error) {
   return &question, nil
 }
 
-func TryHardGetQuestionFromID(ID int16, maxTries byte) (*Question, error) {
+func GetQuestionFromIDTryHard(ID int16, maxTries byte) (*Question, error) {
   var tries byte = 0
 
   getQuestion:
   question, err := QuestionFromID(ID)
   if err != nil {
     if tries > maxTries {
-      return nil, errors.New("TryHardGetQuestionFromID: Error in DB.exists, Max Tries reached\n" + err.Error())
+      return nil, errors.New("GetQuestionFromIDTryHard: Error in DB.exists, Max Tries reached\n" + err.Error())
     }
     tries += 1;
     goto getQuestion
@@ -55,11 +55,11 @@ func postQuestion(ques *Question) error {
   return nil
 }
 
-//check ans =ques id ,userid, answer 
-func CheckAnswer(ID int16, Answer string) (int, error) {
-  question, err := TryHardGetQuestionFromID(ID, 10)
+//check ans = ques id ,userid, answer 
+func CheckAnswerTryHard(ID int16, Answer string) (int, error) {
+  question, err := GetQuestionFromIDTryHard(ID, 10)
   if err != nil {
-    return 0, errors.New("GetHint: Error while getting Question\n" + err.Error())
+    return 0, errors.New("CheckAnswerTryHard: Error while getting Question\n" + err.Error())
   }
 
   if strings.EqualFold(question.Answer, Answer) {
@@ -69,12 +69,12 @@ func CheckAnswer(ID int16, Answer string) (int, error) {
   return 0, nil
 }
 
-func GetHint(ID int16) (int, string, error) {
-  question, err := TryHardGetQuestionFromID(ID, 10)
+func GetHintTryHard(ID int16) (string, int, error) {
+  question, err := GetQuestionFromIDTryHard(ID, 10)
   if err != nil {
-    return 0, "", errors.New("GetHint: Error while getting Question\n" + err.Error())
+    return  "", 0, errors.New("GetHintTryHard: Error while getting Question\n" + err.Error())
   }
 
-  return question.HintPoints, question.Hint, nil
+  return question.Hint, question.HintPoints, nil
 }
 

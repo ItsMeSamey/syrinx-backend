@@ -2,6 +2,9 @@ package DB
 
 import (
   "errors"
+  "time"
+  
+  "go.mongodb.org/mongo-driver/bson"
 )
 
 /// Database sorted by TeamID
@@ -12,7 +15,7 @@ type Team struct {
   // Question id and time in unix milliseconds
   Solved   map[int16]int64 `bson:"solved"`
   // Question id and whether hint is used
-  // Hint     map[int16]bool `bson:"hint"`
+  // Hints     map[int16]bool `bson:"hints"`
   Level    int            `bson:"level"`
 }
 
@@ -38,5 +41,67 @@ func createNewTeam(user *CreatableUser) error {
   }
 
   return nil
+}
+
+func (team *Team) sync() error{
+  result, err := TeamDB.Coll.ReplaceOne(TeamDB.Context, bson.M{"teamID": team.TeamID}, team);
+  if err != nil {
+    return errors.New("Error: Team.sync error\n" + err.Error())
+  }
+  
+  if result.MatchedCount == 0 {
+    return errors.New("Error: Team.sync failed\nmongod: No document found")
+  }
+
+  return nil
+}
+
+func (team *Team) syncTryHard(maxTries byte) error {
+  var tries byte = 0
+
+  sync:
+  
+  if err := team.sync(); err != nil {
+    if tries > maxTries {
+      return errors.New("syncTryHard: Error in Team.Sync, Max Tries reached\n" + err.Error())
+    }
+    tries += 1;
+    goto sync
+  }
+
+  return nil
+}
+
+/// Gives back the hint string
+func (team *Team) getHint(QID int16) (string, error) {
+  hint, points, err := GetHintTryHard(QID)
+  if err != nil {
+    return "", errors.New("Error: Team.getHint\n" + err.Error())
+  }
+
+  // val, ok := team.Hints[QID]
+  // if (!ok || val == false) {
+  //   team.Hints[QID] = true
+  //   team.Points -= points
+  // }
+
+  _ = points
+  return hint, nil
+}
+
+/// Returns success(bool), error
+func (team *Team) checkAnswer(QID int16, Answer string) (bool, error) {
+  points, err := CheckAnswerTryHard(QID, Answer)
+  if err != nil {
+    return false, errors.New("Error: Team.checkAnswer\n" + err.Error())
+  }
+  
+  if (points == 0) {
+    return false, nil
+  }
+
+  team.Points += points
+  team.Solved[QID] = time.Now().UnixMilli()
+  return true, nil
 }
 
