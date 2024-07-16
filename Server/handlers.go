@@ -1,17 +1,18 @@
 package Server
 
 import (
-  "io"
-  "fmt"
-  "errors"
-  "net/http"
-  "encoding/json"
-  "encoding/base64"
+	"encoding/base64"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
 
-  "ccs.ctf/DB"
-  "ccs.ctf/GdHandler"
-  
-  "github.com/gin-gonic/gin"
+	"ccs.ctf/DB"
+	"ccs.ctf/GdHandler"
+
+	"github.com/gin-gonic/gin"
 )
 
 func bindJson(c *gin.Context, obj any) error {
@@ -101,7 +102,7 @@ func authanticationHandler(c *gin.Context) {
 }
 
 /// Function to call when user asks for their lobby
-func lobbyHandler(c *gin.Context) {
+func getLobbyHandler(c *gin.Context) {
   var user struct { SessionID DB.SessID }
 
   if err := bindJson(c, &user); err != nil {
@@ -110,7 +111,7 @@ func lobbyHandler(c *gin.Context) {
   }
 
   if user.SessionID == nil {
-    setErrorJson(c, http.StatusBadRequest, "Username and Password are required")
+    setErrorJson(c, http.StatusBadRequest, "SessionID is required")
     return
   }
 
@@ -120,6 +121,26 @@ func lobbyHandler(c *gin.Context) {
     return
   }
 
-  GdHandler.ConnectToLobby(lobbyObj, c)
+  setSuccessJson(c, gin.H{"LobbyID": hex.EncodeToString((*lobbyObj.ID)[:])})
+}
+
+func lobbyHandler(c *gin.Context) {
+  ID, err := hex.DecodeString(c.Param("lobbyID"))
+  if err != nil {
+    setErrorJson(c, http.StatusInternalServerError, err.Error())
+    return
+  }
+
+  if len(ID) != 12 {
+    setErrorJson(c, http.StatusInternalServerError, "lobbyHandler: LobbyID length mismatch")
+    return
+  }
+
+  if err := GdHandler.ConnectToLobby(DB.ObjID(ID), c); err != nil {
+    setErrorJson(c, http.StatusInternalServerError, "lobbyHandler: Lobby creation error\n" + err.Error())
+    return
+  }
+
+  setSuccessJson(c, gin.H{"Success": true})
 }
 

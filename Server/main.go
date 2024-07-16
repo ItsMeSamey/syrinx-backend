@@ -95,7 +95,9 @@ func Start(ip string, prepend string) {
   /// The authantication route
   router.POST("/authanticate", authanticationHandler)
 
-  router.POST("/getlobby", lobbyHandler)
+  router.POST("/getlobby", getLobbyHandler)
+
+  router.POST("/lobby/:lobbyID", lobbyHandler)
 
   log.Println("Server satarted successfully")
   router.Run(ip)

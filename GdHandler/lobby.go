@@ -12,24 +12,23 @@ import (
 )
 
 type Lobby struct {
-  ID          DB.ObjID
-  players     []DB.Player
-  playercount byte
-  playerMutex sync.RWMutex
-  upgrader    websocket.Upgrader
-  deadtime    byte
+  Lobby       *DB.Lobby
+  Playercount byte
+  PlayerMutex sync.RWMutex
+  Upgrader    websocket.Upgrader
+  Deadtime    byte
 }
 
 /// The lobby handling function responsible for connecting players to their respective lobby
 func (lobby *Lobby) wsHandler(c *gin.Context) {
-  conn, err := lobby.upgrader.Upgrade(c.Writer, c.Request, nil)
+  conn, err := lobby.Upgrader.Upgrade(c.Writer, c.Request, nil)
   if err != nil {
     log.Print("wsHandler: Upgrade error:", err)
   }
   defer func () {
-    lobby.playerMutex.Lock()
-    lobby.playercount -= 1
-    lobby.playerMutex.Unlock()
+    lobby.PlayerMutex.Lock()
+    lobby.Playercount -= 1
+    lobby.PlayerMutex.Unlock()
     conn.Close()
   }()
 
@@ -56,15 +55,15 @@ func (lobby *Lobby) wsHandler(c *gin.Context) {
 
   // Create a player receiving channel
   channel := make(chan []byte, 128)
-  lobby.playerMutex.Lock()
-  lobby.players[myIndex].IN = channel
-  lobby.playerMutex.Unlock()
+  lobby.PlayerMutex.Lock()
+  lobby.Lobby.Players[myIndex].IN = channel
+  lobby.PlayerMutex.Unlock()
 
   // Delete the player receiving channel in the end
   defer func () {
-    lobby.playerMutex.Lock()
-    lobby.players[myIndex].IN = nil
-    lobby.playerMutex.Unlock()
+    lobby.PlayerMutex.Lock()
+    lobby.Lobby.Players[myIndex].IN = nil
+    lobby.PlayerMutex.Unlock()
     close(channel)
   }()
 

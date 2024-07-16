@@ -1,6 +1,7 @@
 package GdHandler
 
 import (
+  "errors"
   "sync"
   "time"
   
@@ -16,45 +17,48 @@ var (
 )
 
 /// Function to make an empty lobby struct
-func makeLobby(lobby *DB.Lobby) *Lobby {
-  return &Lobby {
-    ID: lobby.ID,
-    players: lobby.Players,
-    playercount: 0,
-    playerMutex: sync.RWMutex{},
-    upgrader: websocket.Upgrader{ ReadBufferSize:  1024, WriteBufferSize: 1024 },
-    deadtime: 0,
+func makeLobby(ID DB.ObjID) (*Lobby, error) {
+  lobby, err := DB.LobbyFromID(ID)
+  if err != nil {
+    return nil, err
   }
-}
 
+  return &Lobby {
+    Lobby: lobby,
+    Playercount: 0,
+    PlayerMutex: sync.RWMutex{},
+    Upgrader: websocket.Upgrader{ ReadBufferSize:  1024, WriteBufferSize: 1024 },
+    Deadtime: 0,
+  }, nil
+}
 
 //! WARNING: DO NOT MESS WITH THIS UNLESS YOU KNOW WHAT YOU ARE DOING
 /// Automatically close the lobby when there is no one in it
 /// This function bocks (a long as lobby exists),
 /// and probably should be async
 func watchdog(lobby *Lobby) {
-  lobby.deadtime = 0
-  sleepTime := (30 + (lobby.ID[0]&31))
+  lobby.Deadtime = 0
+  sleepTime := (30 + (lobby.Lobby.ID[0]&31))
 begin:
   time.Sleep(time.Duration(sleepTime) * time.Second)
-  lobby.playerMutex.RLock()
-  if lobby.playercount == 0 {
-    lobby.deadtime += 1
+  lobby.PlayerMutex.RLock()
+  if lobby.Playercount == 0 {
+    lobby.Deadtime += 1
   }
-  lobby.playerMutex.RUnlock()
+  lobby.PlayerMutex.RUnlock()
 
-  if lobby.deadtime >= 10 { // Lobby timeout 5~10 minutes
+  if lobby.Deadtime >= 10 { // Lobby timeout 5~10 minutes
     lobbiesMutex.Lock()
-    lobby.playerMutex.Lock()
-    if lobby.playercount == 0 {
+    lobby.PlayerMutex.Lock()
+    if lobby.Playercount == 0 {
       // Delete the lobby
-      delete(lobbies, *lobby.ID);
-      lobby.playerMutex.Unlock()
+      delete(lobbies, *lobby.Lobby.ID);
+      lobby.PlayerMutex.Unlock()
       lobbiesMutex.Unlock()
       return
     }
-    lobby.deadtime = 0
-    lobby.playerMutex.Unlock()
+    lobby.Deadtime = 0
+    lobby.PlayerMutex.Unlock()
     lobbiesMutex.Unlock()
   }
   goto begin
@@ -62,32 +66,39 @@ begin:
 
 //! WARNING: DO NOT MESS WITH THIS UNLESS YOU KNOW WHAT YOU ARE DOING
 /// Connect to a lobby if one exists or add it to the lobby map
-func ConnectToLobby(lobby *DB.Lobby, c *gin.Context) {
+func ConnectToLobby(ID DB.ObjID, c *gin.Context) error {
   start:
   lobbiesMutex.RLock()
-  val, ok := lobbies[*lobby.ID]
+  val, ok := lobbies[*ID]
   lobbiesMutex.RUnlock()
   if ok {
-    val.playerMutex.Lock()
-    if val.deadtime >= 10 { goto start }
-    val.playercount += 1
-    go val.wsHandler(c)
+    val.PlayerMutex.Lock()
+    if val.Deadtime >= 10 { goto start }
+    val.Playercount += 1
+    val.wsHandler(c)
   } else {
     // A user will be stranded in a isolated lobby if thisis ignored
     lobbiesMutex.Lock()
-    val, ok := lobbies[*lobby.ID]
+    val, ok := lobbies[*ID]
     
     if ok {// If a lobby was created when we switched locks !!
       lobbiesMutex.Unlock()
       goto start
     } else {
-      val = makeLobby(lobby)
-      lobbies[*lobby.ID] = val
+      var err error
+      val, err = makeLobby(ID)
+      if err != nil {
+        lobbiesMutex.Unlock()
+        return errors.New("ConnectToLobby: error while lobby creation\n" + err.Error())
+      }
+      lobbies[*ID] = val
       lobbiesMutex.Unlock()
-      val.playercount += 1
-      go val.wsHandler(c)
+
+      val.Playercount += 1
+      val.wsHandler(c)
       go watchdog(val)
     }
   }
+  return nil
 }
 

@@ -44,10 +44,10 @@ func (lobby *Lobby) handleBinaryMessage(myIndex byte, message []byte) error {
 /// DONOT USE THIS UNLESS YOU KNOW WHAT YOU ARE DOING. USE `announceToOne` INSTEAD
 /// Send a message to someone without locking
 func (lobby * Lobby) announceToOneUnlocked(Index byte, message []byte) error {
-  if int(Index) > len(lobby.players) {
+  if int(Index) > len(lobby.Lobby.Players) {
     return errors.New("announceToOneNOLOCK: invalid Index")
   }
-  pc := lobby.players[Index].IN
+  pc := lobby.Lobby.Players[Index].IN
   if pc != nil {
     pc <- message
   }
@@ -56,18 +56,18 @@ func (lobby * Lobby) announceToOneUnlocked(Index byte, message []byte) error {
 
 /// Send a message to someone
 func (lobby * Lobby) announceToOne(Index byte, message []byte) error {
-  lobby.playerMutex.RLock()
-  defer lobby.playerMutex.RUnlock()
+  lobby.PlayerMutex.RLock()
+  defer lobby.PlayerMutex.RUnlock()
   return lobby.announceToOneUnlocked(Index, message)
 }
 
 /// Send a message to everyone in your lobby
 func (lobby * Lobby) announceToAll(message []byte) error {
   var err error = nil
-  lobby.playerMutex.RLock()
-  defer lobby.playerMutex.RUnlock()
+  lobby.PlayerMutex.RLock()
+  defer lobby.PlayerMutex.RUnlock()
 
-  for i := range lobby.players {
+  for i := range lobby.Lobby.Players {
     if e := lobby.announceToOneUnlocked(byte(i), message); e != nil {
       err = e
     }

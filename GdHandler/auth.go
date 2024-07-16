@@ -19,7 +19,7 @@ func (lobby *Lobby) getUserAuth(messageType int, message []byte) (byte, error) {
 	}
 
 	// Validate token
-	for i, player := range lobby.players {
+	for i, player := range lobby.Lobby.Players {
 		if player.SessionID == DB.SessID(message) {
 			return byte(i), nil
 		}
