@@ -1,10 +1,11 @@
 package DB
 
 import (
-  "errors"
-  
-  "go.mongodb.org/mongo-driver/bson"
-  "go.mongodb.org/mongo-driver/mongo"
+	"errors"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 /// Struct meant to be used in GdIntegration
@@ -67,8 +68,58 @@ func createLobby(SessionID SessID) (*Lobby, error) {
   if err := TeamDB.get("teamID", user.TeamID, &team); err != nil {
     return nil, errors.New("createLobby: TeamDB.get error\n" + err.Error())
   }
-  
-  return nil, errors.ErrUnsupported
+
+  cursor, err := UserDB.Coll.Find(UserDB.Context, bson.M{"teamID": user.TeamID})
+  if err != nil {
+    return nil, errors.New("createLobby: Find error\n" + err.Error())
+  }
+
+  var players []Player
+  if err = cursor.All(UserDB.Context, &players); err != nil {
+    return nil, errors.New("createLobby: cursor.All error\n" + err.Error())
+  }
+
+  var lobby Lobby
+  err = LobbyDB.get("isComplete", false, lobby)
+  if err == mongo.ErrNoDocuments {
+    lobby = Lobby{
+      ID: nil,
+      Players: players,
+      Teams: []Team{team},
+      IsComplete: false,
+    }
+
+    insertOneResult, err := LobbyDB.Coll.InsertOne(LobbyDB.Context, lobby)
+    if err != nil {
+      return nil, errors.New("createLobby: InsertOne error\n" + err.Error())
+    }
+
+    ID, ok := insertOneResult.InsertedID.(primitive.ObjectID)
+    if !ok {
+      return nil, errors.New("createLobby: Id was not object ID")
+    }
+
+    lobby.ID = &ID
+  } else if err != nil {
+    return nil, errors.New("createLobby: DB.exists error\n" + err.Error())
+  } else {
+    lobby.Players = append(lobby.Players, players...)
+    lobby.Teams = append(lobby.Teams, team)
+    if len(lobby.Teams) >= 4 {
+      lobby.IsComplete = true
+    }
+
+    result, err := LobbyDB.Coll.ReplaceOne(LobbyDB.Context, bson.M{"_id": lobby.ID}, lobby)
+    if err != nil {
+      return nil, errors.New("\n" + err.Error())
+    }
+
+    id, _ := result.UpsertedID.(primitive.ObjectID)
+    if id != *lobby.ID {
+      panic("ID MISMATCH")
+    }
+  }
+  return &lobby, nil
 }
 
 func SaveLobby(lobby *Lobby) error {

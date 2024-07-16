@@ -1,18 +1,18 @@
 package Server
 
 import (
-	"encoding/base64"
-	"encoding/hex"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"io"
-	"net/http"
-
-	"ccs.ctf/DB"
-	"ccs.ctf/GdHandler"
-
-	"github.com/gin-gonic/gin"
+  "encoding/base64"
+  "encoding/hex"
+  "encoding/json"
+  "errors"
+  "fmt"
+  "io"
+  "net/http"
+  
+  "ccs.ctf/DB"
+  "ccs.ctf/GdHandler"
+  
+  "github.com/gin-gonic/gin"
 )
 
 func bindJson(c *gin.Context, obj any) error {
