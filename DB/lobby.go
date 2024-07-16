@@ -1,11 +1,11 @@
 package DB
 
 import (
-	"errors"
-
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
+  "errors"
+  
+  "go.mongodb.org/mongo-driver/bson"
+  "go.mongodb.org/mongo-driver/bson/primitive"
+  "go.mongodb.org/mongo-driver/mongo"
 )
 
 /// Struct meant to be used in GdIntegration
@@ -33,10 +33,11 @@ func LobbyFromID(lobbyID ObjID) (*Lobby, error) {
   return &lobby, nil
 }
 
+/// Get a lobby in which user is meant to be
+/// Creates a new one it they are joining new
 func LobbyFromUserSessionID(SessionID SessID) (*Lobby, error) {
-  var lobby *Lobby
   query := bson.M{
-    "users": bson.M{
+    "players": bson.M{
       "$elemMatch": bson.M{ "sessionID": SessionID, },
     },
   }
@@ -45,30 +46,34 @@ func LobbyFromUserSessionID(SessionID SessID) (*Lobby, error) {
   err := result.Err()
 
   if err == mongo.ErrNoDocuments{
-    lobby, err = createLobby(SessionID)
+    // User are in no lobby, create a new one
+    return createLobby(SessionID)
   } else if err != nil {
     return nil, errors.New("LobbyFromUserSessionID: DB.get error\n" + err.Error())
-  } else{
-    var _lobby Lobby
-    if err := result.Decode(&_lobby); err != nil {
-      return nil, errors.New("LobbyFromUserSessionID: Decode error\n" + err.Error())
-    }
-    lobby = &_lobby
   }
-  return lobby, nil
+
+  var lobby Lobby
+  if err := result.Decode(&lobby); err != nil {
+    return nil, errors.New("LobbyFromUserSessionID: Decode error\n" + err.Error())
+  }
+  return &lobby, nil
 }
 
+/// Adds a user and their team to a lobby if one exists or create a new one for them
 func createLobby(SessionID SessID) (*Lobby, error) {
+  /// Get the user object (to get the team ID)
   var user User
-  if err := UserDB.get("SessionID", SessionID, &user); err != nil {
+  if err := UserDB.get("sessionID", SessionID, &user); err != nil {
     return nil, errors.New("createLobby: UserDB.get error\n" + err.Error())
   }
 
+  /// get user's team
   var team Team
   if err := TeamDB.get("teamID", user.TeamID, &team); err != nil {
     return nil, errors.New("createLobby: TeamDB.get error\n" + err.Error())
   }
 
+  /// Get all the players in that team
   cursor, err := UserDB.Coll.Find(UserDB.Context, bson.M{"teamID": user.TeamID})
   if err != nil {
     return nil, errors.New("createLobby: Find error\n" + err.Error())
@@ -79,10 +84,13 @@ func createLobby(SessionID SessID) (*Lobby, error) {
     return nil, errors.New("createLobby: cursor.All error\n" + err.Error())
   }
 
-  var lobby Lobby
-  err = LobbyDB.get("isComplete", false, lobby)
+  /// Try to find a partially vacant lobby
+  result := LobbyDB.Coll.FindOne(LobbyDB.Context, bson.M{"isComplete": false})
+  err = result.Err()
+
+  /// Create a brand new lobby
   if err == mongo.ErrNoDocuments {
-    lobby = Lobby{
+    lobby := Lobby{
       ID: nil,
       Players: players,
       Teams: []Team{team},
@@ -100,25 +108,30 @@ func createLobby(SessionID SessID) (*Lobby, error) {
     }
 
     lobby.ID = &ID
+
+    return &lobby, nil
   } else if err != nil {
-    return nil, errors.New("createLobby: DB.exists error\n" + err.Error())
-  } else {
-    lobby.Players = append(lobby.Players, players...)
-    lobby.Teams = append(lobby.Teams, team)
-    if len(lobby.Teams) >= 4 {
-      lobby.IsComplete = true
-    }
-
-    result, err := LobbyDB.Coll.ReplaceOne(LobbyDB.Context, bson.M{"_id": lobby.ID}, lobby)
-    if err != nil {
-      return nil, errors.New("\n" + err.Error())
-    }
-
-    id, _ := result.UpsertedID.(primitive.ObjectID)
-    if id != *lobby.ID {
-      panic("ID MISMATCH")
-    }
+    return nil, errors.New("createLobby: FindOne error\n" + err.Error())
   }
+
+  /// Add to the existing lobby
+  var lobby Lobby
+  err = result.Decode(&lobby)
+  if err != nil {
+    return nil, errors.New("createLobby: result.Decode error\n" + err.Error())
+  }
+
+  lobby.Players = append(lobby.Players, players...)
+  lobby.Teams = append(lobby.Teams, team)
+  if len(lobby.Teams) >= 4 {
+    lobby.IsComplete = true
+  }
+
+  _, err = LobbyDB.Coll.ReplaceOne(LobbyDB.Context, bson.M{"_id": lobby.ID}, lobby)
+  if err != nil {
+    return nil, errors.New("\n" + err.Error())
+  }
+
   return &lobby, nil
 }
 
