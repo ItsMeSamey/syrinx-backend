@@ -12,7 +12,7 @@ import (
 )
 
 var (
-  lobbies map[primitive.ObjectID]*Lobby
+  lobbies map[primitive.ObjectID]*Lobby = make(map[primitive.ObjectID]*Lobby)
   lobbiesMutex sync.RWMutex = sync.RWMutex{}
 )
 
@@ -75,7 +75,7 @@ func ConnectToLobby(ID DB.ObjID, c *gin.Context) error {
     val.PlayerMutex.Lock()
     if val.Deadtime >= 10 { goto start }
     val.Playercount += 1
-    val.wsHandler(c)
+    return val.wsHandler(c)
   } else {
     // A user will be stranded in a isolated lobby if thisis ignored
     lobbiesMutex.Lock()
@@ -95,10 +95,9 @@ func ConnectToLobby(ID DB.ObjID, c *gin.Context) error {
       lobbiesMutex.Unlock()
 
       val.Playercount += 1
-      val.wsHandler(c)
       go watchdog(val)
+      return val.wsHandler(c)
     }
   }
-  return nil
 }
 

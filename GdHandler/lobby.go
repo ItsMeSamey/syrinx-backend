@@ -20,10 +20,10 @@ type Lobby struct {
 }
 
 /// The lobby handling function responsible for connecting players to their respective lobby
-func (lobby *Lobby) wsHandler(c *gin.Context) {
+func (lobby *Lobby) wsHandler(c *gin.Context) error {
   conn, err := lobby.Upgrader.Upgrade(c.Writer, c.Request, nil)
   if err != nil {
-    log.Print("wsHandler: Upgrade error:", err)
+    return errors.New("wsHandler: Upgrade error\n" + err.Error())
   }
   defer func () {
     lobby.PlayerMutex.Lock()
@@ -41,7 +41,7 @@ func (lobby *Lobby) wsHandler(c *gin.Context) {
       continue
     } else if messageType == websocket.CloseMessage {
       _ = conn.Close()
-      return
+      return errors.New("wsHandler: Connection closed without auth")
     }
     myIndex, err = lobby.getUserAuth(messageType, message)
     if err == nil {
@@ -98,5 +98,6 @@ func (lobby *Lobby) wsHandler(c *gin.Context) {
       continue
     }
   }
+  return nil
 }
 

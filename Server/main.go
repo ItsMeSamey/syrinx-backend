@@ -95,9 +95,11 @@ func Start(ip string, prepend string) {
   /// The authantication route
   router.POST("/authanticate", authanticationHandler)
 
+  /// Get the lobbyID
   router.POST("/getlobby", getLobbyHandler)
 
-  router.POST("/lobby/:lobbyID", lobbyHandler)
+  /// Join the lobby using WS
+  router.GET("/lobby/:lobbyID", lobbyHandler)
 
   log.Println("Server satarted successfully")
   router.Run(ip)
