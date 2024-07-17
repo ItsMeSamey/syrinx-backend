@@ -1,15 +1,15 @@
 package GdHandler
 
 import (
-	"errors"
-	"log"
+  "errors"
+  "log"
 )
 
 /// This will probably handle questioning/answering
 func (lobby *Lobby) handleTextMessage(myIndex byte, message []byte) error {
   // TODO: implement
   _ = myIndex
-  _ = message
+  log.Println("Got String: ", message)
   return errors.ErrUnsupported
 }
 
@@ -18,7 +18,7 @@ func (lobby *Lobby) handleBinaryMessage(myIndex byte, message []byte) error {
   if len(message) < 1 {
     return errors.New("handleBinaryMessage: Error empty message")
   }
-  log.Println("Got: ", message)
+  log.Println("Got Binary: ", message)
   procudure := message[0]
   switch (procudure) {
   case 1: //! Add player on [2, playerIndex], and send offers
