@@ -1,7 +1,8 @@
 package GdHandler
 
 import (
-  "errors"
+	"errors"
+	"log"
 )
 
 /// This will probably handle questioning/answering
@@ -17,12 +18,13 @@ func (lobby *Lobby) handleBinaryMessage(myIndex byte, message []byte) error {
   if len(message) < 1 {
     return errors.New("handleBinaryMessage: Error empty message")
   }
+  log.Println("Got: ", message)
   procudure := message[0]
   switch (procudure) {
   case 1: //! Add player on [2, playerIndex], and send offers
-    return lobby.announceToAll([]byte{0x01, myIndex})
+    return lobby.announceToAll(myIndex, []byte{0x01, myIndex})
   case 2: //! Remove player on [3, playerIndex]
-    return lobby.announceToAll([]byte{0x02, myIndex})
+    return lobby.announceToAll(myIndex, []byte{0x02, myIndex})
   case 3: /// Send message to a specific person
     if len(message) < 2 {
       return errors.New("handleBinaryMessage: Cannot broadcast to Unknown")
@@ -32,7 +34,7 @@ func (lobby *Lobby) handleBinaryMessage(myIndex byte, message []byte) error {
 
     to := message[1]
     if to == myIndex {
-      return lobby.announceToAll(message)
+      return lobby.announceToAll(myIndex, message)
     } else {
       message[1] = myIndex
       return lobby.announceToOne(to, message)
@@ -63,13 +65,15 @@ func (lobby * Lobby) announceToOne(Index byte, message []byte) error {
 }
 
 /// Send a message to everyone in your lobby
-func (lobby * Lobby) announceToAll(message []byte) error {
+func (lobby * Lobby) announceToAll(myIndex byte, message []byte) error {
   var err error = nil
   lobby.PlayerMutex.RLock()
   defer lobby.PlayerMutex.RUnlock()
 
   for i := range lobby.Lobby.Players {
-    err = errors.Join(err, lobby.announceToOneUnlocked(byte(i), message))
+    if i != int(myIndex){
+      err = errors.Join(err, lobby.announceToOneUnlocked(byte(i), message))
+    }
   }
 
   if err != nil {
