@@ -1,11 +1,10 @@
 package GdHandler
 
 import (
-	"errors"
+  "errors"
+  "reflect"
 
-	"ccs.ctf/DB"
-
-	"github.com/gorilla/websocket"
+  "github.com/gorilla/websocket"
 )
 
 /// Checks user auth
@@ -20,7 +19,7 @@ func (lobby *Lobby) getUserAuth(messageType int, message []byte) (byte, error) {
 
 	// Validate token
 	for i, player := range lobby.Lobby.Players {
-		if player.SessionID == DB.SessID(message) {
+		if reflect.DeepEqual(*player.SessionID, [64]byte(message)) {
 			return byte(i), nil
 		}
 	}

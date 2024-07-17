@@ -37,19 +37,19 @@ func (lobby *Lobby) wsHandler(c *gin.Context) error {
   for {
     messageType, message, err := conn.ReadMessage()
     if err != nil {
-      log.Println("wsHandler: Read error:", err)
-      continue
+      log.Println("!!!wsHandler: Read error:", err)
+      return errors.New("wsHandler: Read error:" + err.Error())
     } else if messageType == websocket.CloseMessage {
       _ = conn.Close()
       return errors.New("wsHandler: Connection closed without auth")
     }
     myIndex, err = lobby.getUserAuth(messageType, message)
     if err == nil {
-      if conn.WriteMessage(websocket.BinaryMessage, []byte{0, myIndex}) == nil {
+      if conn.WriteMessage(websocket.BinaryMessage, []byte{0x00, myIndex}) == nil {
         break
       }
     } else {
-      _ = conn.WriteMessage(websocket.BinaryMessage, []byte{0})
+      _ = conn.WriteMessage(websocket.BinaryMessage, append([]byte{0xff}, []byte(err.Error())...))
     }
   }
 
@@ -78,14 +78,14 @@ func (lobby *Lobby) wsHandler(c *gin.Context) error {
   for {
     messageType, message, err := conn.ReadMessage()
     if err != nil {
-      log.Println("wsHandler: Read error:", err)
-      continue
+      log.Println("!!!wsHandler: Read error:", err)
+      return errors.New("wsHandler: Read error:" + err.Error())
     }
     if messageType == websocket.CloseMessage {
       break
     }
 
-    // Async can cause UB as values can be modified while another goroutine is in fligt
+    // Async can cause UB as values can be modified while another goroutine is in flight
     if messageType == websocket.TextMessage {
       err = lobby.handleTextMessage(myIndex, message)
     } else if messageType == websocket.BinaryMessage{
@@ -95,6 +95,7 @@ func (lobby *Lobby) wsHandler(c *gin.Context) error {
     }
     if err != nil {
       log.Println("wsHandler: error:", err)
+      _ = conn.WriteMessage(websocket.BinaryMessage, append([]byte{0xff}, []byte(err.Error())...))
       continue
     }
   }

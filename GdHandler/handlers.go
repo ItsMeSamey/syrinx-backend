@@ -9,20 +9,20 @@ func (lobby *Lobby) handleTextMessage(myIndex byte, message []byte) error {
   // TODO: implement
   _ = myIndex
   _ = message
-  return nil
+  return errors.ErrUnsupported
 }
 
 /// Handles binary message to websocket
 func (lobby *Lobby) handleBinaryMessage(myIndex byte, message []byte) error {
   if len(message) < 1 {
-    return errors.New("handleBinaryMessage: Unknown procedure")
+    return errors.New("handleBinaryMessage: Error empty message")
   }
   procudure := message[0]
   switch (procudure) {
   case 1: //! Add player on [2, playerIndex], and send offers
-    return lobby.announceToAll([]byte{1, myIndex})
+    return lobby.announceToAll([]byte{0x01, myIndex})
   case 2: //! Remove player on [3, playerIndex]
-    return lobby.announceToAll([]byte{2, myIndex})
+    return lobby.announceToAll([]byte{0x02, myIndex})
   case 3: /// Send message to a specific person
     if len(message) < 2 {
       return errors.New("handleBinaryMessage: Cannot broadcast to Unknown")
@@ -31,14 +31,15 @@ func (lobby *Lobby) handleBinaryMessage(myIndex byte, message []byte) error {
     }
 
     to := message[1]
-    message[1] = myIndex
     if to == myIndex {
       return lobby.announceToAll(message)
     } else {
+      message[1] = myIndex
       return lobby.announceToOne(to, message)
     }
+  default:
+    return errors.New("handleBinaryMessage: Unknown procedure")
   }
-  return nil
 }
 
 /// DONOT USE THIS UNLESS YOU KNOW WHAT YOU ARE DOING. USE `announceToOne` INSTEAD
@@ -68,10 +69,12 @@ func (lobby * Lobby) announceToAll(message []byte) error {
   defer lobby.PlayerMutex.RUnlock()
 
   for i := range lobby.Lobby.Players {
-    if e := lobby.announceToOneUnlocked(byte(i), message); e != nil {
-      err = e
-    }
+    err = errors.Join(err, lobby.announceToOneUnlocked(byte(i), message))
   }
-  return err
+
+  if err != nil {
+    return errors.New("announceToAll: announceToOne error\n" + err.Error())
+  }
+  return nil
 }
 

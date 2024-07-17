@@ -22,7 +22,7 @@ func bindJson(c *gin.Context, obj any) error {
   }
 
   /// Logging code
-  writer.Write([]byte("\n\n>>>>>\n>> "))
+  writer.Write([]byte("\n>>>>>\n>> "))
   writer.Write(jsonData)
   writer.Write([]byte("\n<< "))
   /// Logging
