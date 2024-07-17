@@ -75,6 +75,7 @@ func ConnectToLobby(ID DB.ObjID, c *gin.Context) error {
     val.PlayerMutex.Lock()
     if val.Deadtime >= 10 { goto start }
     val.Playercount += 1
+    val.PlayerMutex.Unlock()
     return val.wsHandler(c)
   } else {
     // A user will be stranded in a isolated lobby if thisis ignored

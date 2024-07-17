@@ -137,10 +137,11 @@ func lobbyHandler(c *gin.Context) {
   }
 
   if err := GdHandler.ConnectToLobby(DB.ObjID(ID), c); err != nil {
+    return
     setErrorJson(c, http.StatusInternalServerError, "lobbyHandler: Lobby creation error\n" + err.Error())
     return
   }
-
+return
   setSuccessJson(c, gin.H{"Success": true})
 }
 

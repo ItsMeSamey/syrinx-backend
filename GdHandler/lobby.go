@@ -56,15 +56,20 @@ func (lobby *Lobby) wsHandler(c *gin.Context) error {
   // Create a player receiving channel
   channel := make(chan []byte, 128)
   lobby.PlayerMutex.Lock()
+  if lobby.Lobby.Players[myIndex].IN != nil {
+    close(lobby.Lobby.Players[myIndex].IN)
+  }
   lobby.Lobby.Players[myIndex].IN = channel
   lobby.PlayerMutex.Unlock()
 
   // Delete the player receiving channel in the end
   defer func () {
     lobby.PlayerMutex.Lock()
-    lobby.Lobby.Players[myIndex].IN = nil
+    if lobby.Lobby.Players[myIndex].IN != nil {
+      close(channel)
+      lobby.Lobby.Players[myIndex].IN = nil
+    }
     lobby.PlayerMutex.Unlock()
-    close(channel)
   }()
 
   // Handle incoming data
