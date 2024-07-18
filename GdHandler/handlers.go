@@ -18,12 +18,13 @@ func (lobby *Lobby) handleBinaryMessage(myIndex byte, message []byte) error {
   if len(message) < 1 {
     return errors.New("handleBinaryMessage: Error empty message")
   }
-  log.Println("Got Binary: ", message)
   procudure := message[0]
   switch (procudure) {
   case 1: //! Add player on [2, playerIndex], and send offers
+    log.Println("Got Binary: ", message)
     return lobby.announceToAll(myIndex, []byte{0x01, myIndex})
   case 2: //! Remove player on [3, playerIndex]
+    log.Println("Got Binary: ", message)
     return lobby.announceToAll(myIndex, []byte{0x02, myIndex})
   case 3: /// Send message to a specific person
     if len(message) < 2 {
@@ -31,6 +32,7 @@ func (lobby *Lobby) handleBinaryMessage(myIndex byte, message []byte) error {
     } else if len(message) < 3 {
       return errors.New("handleBinaryMessage: Cannot broadcast empty message")
     }
+    log.Println("Got: ", message[:2], " ", string(message[2]))
 
     to := message[1]
     if to == myIndex {
@@ -47,10 +49,11 @@ func (lobby *Lobby) handleBinaryMessage(myIndex byte, message []byte) error {
 /// DONOT USE THIS UNLESS YOU KNOW WHAT YOU ARE DOING. USE `announceToOne` INSTEAD
 /// Send a message to someone without locking
 func (lobby * Lobby) announceToOneUnlocked(Index byte, message []byte) error {
-  if int(Index) > len(lobby.Lobby.Players) {
+  ind := int(Index)
+  if ind > len(lobby.Lobby.Players) {
     return errors.New("announceToOneNOLOCK: invalid Index")
   }
-  pc := lobby.Lobby.Players[Index].IN
+  pc := lobby.Lobby.Players[ind].IN
   if pc != nil {
     pc <- message
   }
