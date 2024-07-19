@@ -1,19 +1,19 @@
 package GdHandler
 
 import (
-	"encoding/json"
-	"errors"
-	"log"
-
-	"ccs.ctf/DB"
-	"github.com/gorilla/websocket"
+  "encoding/json"
+  "errors"
+  "log"
+  
+  "ccs.ctf/DB"
+  "github.com/gorilla/websocket"
 )
 
 /// This will probably handle questioning/answering
 func (lobby *Lobby) handleTextMessage(myIndex byte, message []byte, conn *websocket.Conn) error {
-  log.Println("Got String: ", message)
+  log.Println("Got String: ", string(message))
   _question := DB.Question{}
-  if err := json.Unmarshal(message, _question); err != nil {
+  if err := json.Unmarshal(message, &_question); err != nil {
     return err
   }
 
