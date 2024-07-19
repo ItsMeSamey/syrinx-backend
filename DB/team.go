@@ -56,11 +56,10 @@ func (team *Team) sync() error{
   return nil
 }
 
-func (team *Team) syncTryHard(maxTries byte) error {
+func (team *Team) SyncTryHard(maxTries byte) error {
   var tries byte = 0
 
   sync:
-  
   if err := team.sync(); err != nil {
     if tries > maxTries {
       return errors.New("syncTryHard: Error in Team.Sync, Max Tries reached\n" + err.Error())
@@ -73,8 +72,8 @@ func (team *Team) syncTryHard(maxTries byte) error {
 }
 
 /// Gives back the hint string
-func (team *Team) getHint(QID int16) (string, error) {
-  hint, points, err := GetHintTryHard(QID)
+func (team *Team) GetHint(QID int16, maxTries byte) (string, error) {
+  hint, points, err := GetHintTryHard(QID, maxTries)
   if err != nil {
     return "", errors.New("Error: Team.getHint\n" + err.Error())
   }
@@ -90,8 +89,8 @@ func (team *Team) getHint(QID int16) (string, error) {
 }
 
 /// Returns success(bool), error
-func (team *Team) checkAnswer(QID int16, Answer string) (bool, error) {
-  points, err := CheckAnswerTryHard(QID, Answer)
+func (team *Team) CheckAnswer(QID int16, Answer string, maxTries byte) (bool, error) {
+  points, err := CheckAnswerTryHard(QID, Answer, maxTries)
   if err != nil {
     return false, errors.New("Error: Team.checkAnswer\n" + err.Error())
   }

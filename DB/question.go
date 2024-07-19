@@ -56,8 +56,8 @@ func postQuestion(ques *Question) error {
 }
 
 //check ans = ques id ,userid, answer 
-func CheckAnswerTryHard(ID int16, Answer string) (int, error) {
-  question, err := GetQuestionFromIDTryHard(ID, 10)
+func CheckAnswerTryHard(ID int16, Answer string, maxTries byte) (int, error) {
+  question, err := GetQuestionFromIDTryHard(ID, maxTries)
   if err != nil {
     return 0, errors.New("CheckAnswerTryHard: Error while getting Question\n" + err.Error())
   }
@@ -69,8 +69,8 @@ func CheckAnswerTryHard(ID int16, Answer string) (int, error) {
   return 0, nil
 }
 
-func GetHintTryHard(ID int16) (string, int, error) {
-  question, err := GetQuestionFromIDTryHard(ID, 10)
+func GetHintTryHard(ID int16, maxTries byte) (string, int, error) {
+  question, err := GetQuestionFromIDTryHard(ID, maxTries)
   if err != nil {
     return  "", 0, errors.New("GetHintTryHard: Error while getting Question\n" + err.Error())
   }

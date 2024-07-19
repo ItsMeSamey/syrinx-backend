@@ -1,16 +1,42 @@
 package GdHandler
 
 import (
-  "errors"
-  "log"
+	"encoding/json"
+	"errors"
+	"log"
+
+	"ccs.ctf/DB"
+	"github.com/gorilla/websocket"
 )
 
 /// This will probably handle questioning/answering
-func (lobby *Lobby) handleTextMessage(myIndex byte, message []byte) error {
-  // TODO: implement
-  _ = myIndex
+func (lobby *Lobby) handleTextMessage(myIndex byte, message []byte, conn *websocket.Conn) error {
   log.Println("Got String: ", message)
-  return errors.ErrUnsupported
+  _question := DB.Question{}
+  if err := json.Unmarshal(message, _question); err != nil {
+    return err
+  }
+
+  if _question.Answer == "" {
+    question, err := DB.QuestionFromID(_question.ID)
+    if err != nil {
+      return err
+    }
+    conn.WriteMessage(websocket.TextMessage, []byte(question.Question))
+  } else {
+    myTeam := lobby.Lobby.Players[myIndex].TeamID
+    for i := range lobby.Lobby.Teams {
+      if *(lobby.Lobby.Teams[i].TeamID) == *myTeam {
+        lobby.PlayerMutex.Lock()
+        lobby.Lobby.Teams[i].CheckAnswer(_question.ID, _question.Answer, 5)
+        lobby.Lobby.Teams[i].SyncTryHard(5)
+        lobby.PlayerMutex.Unlock()
+        break
+      }
+    }
+  }
+
+  return nil 
 }
 
 /// Handles binary message to websocket

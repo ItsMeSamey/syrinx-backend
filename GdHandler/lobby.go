@@ -92,7 +92,7 @@ func (lobby *Lobby) wsHandler(c *gin.Context) error {
 
     // Async can cause UB as values can be modified while another goroutine is in flight
     if messageType == websocket.TextMessage {
-      err = lobby.handleTextMessage(myIndex, message)
+      err = lobby.handleTextMessage(myIndex, message, conn)
     } else if messageType == websocket.BinaryMessage{
       err = lobby.handleBinaryMessage(myIndex, message)
     } else {
