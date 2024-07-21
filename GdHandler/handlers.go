@@ -9,6 +9,16 @@ import (
   "github.com/gorilla/websocket"
 )
 
+func (lobby *Lobby) getTeam(myIndex byte) (*DB.Team, error) {
+  myTeam := lobby.Lobby.Players[myIndex].TeamID
+  for i := range lobby.Lobby.Teams {
+    if *(lobby.Lobby.Teams[i].TeamID) == *myTeam {
+      return &lobby.Lobby.Teams[i], nil
+    }
+  }
+  return nil, errors.New("getTeam: user's team is not present in this lobby")
+}
+
 /// This will probably handle questioning/answering
 func (lobby *Lobby) handleTextMessage(myIndex byte, message []byte, conn *websocket.Conn) error {
   log.Println("Got String: ", string(message))
@@ -17,27 +27,41 @@ func (lobby *Lobby) handleTextMessage(myIndex byte, message []byte, conn *websoc
     return err
   }
 
-  if _question.Answer == "" {
-    question, err := DB.QuestionFromID(_question.ID)
-    if err != nil {
-      return err
-    }
-    conn.WriteMessage(websocket.TextMessage, []byte(question.Question))
-  } else {
-    myTeam := lobby.Lobby.Players[myIndex].TeamID
-    for i := range lobby.Lobby.Teams {
-      if *(lobby.Lobby.Teams[i].TeamID) == *myTeam {
-        lobby.PlayerMutex.Lock()
-        lobby.Lobby.Teams[i].CheckAnswer(_question.ID, _question.Answer, 5)
-        lobby.Lobby.Teams[i].SyncTryHard(5)
-        lobby.PlayerMutex.Unlock()
-        break
-      }
-    }
+  lobby.PlayerMutex.Lock()
+  team, err := lobby.getTeam(myIndex)
+  lobby.PlayerMutex.Unlock()
+  if err != nil {
+    return errors.New(("handleTextMessage: error getting team\n") + err.Error())
   }
 
-  return nil 
+  if _question.Answer != "" {
+    correct, err := team.CheckAnswer(_question.ID, _question.Answer, 5)
+    if err != nil {
+      return errors.New(("handleTextMessage: Check Answer error\n ") + err.Error())
+    }
+
+    if !correct {
+      return conn.WriteMessage(websocket.TextMessage, []byte("{\"correct\":false}"))
+    }
+
+    err = team.SyncTryHard(5)
+    if err != nil {
+      return errors.New(("handleTextMessage: sync error\n ") + err.Error())
+    }
+
+    return conn.WriteMessage(websocket.TextMessage, []byte("{\"correct\":true}"))
+  }
+
+  question, err := DB.QuestionFromID(_question.ID)
+  if err != nil {
+    return errors.New(("handleTextMessage: error getting question\n ") + err.Error())
+  }
+  if question.Level != team.Level {
+    return errors.New("handleTextMessage: Level mismatch")
+  }
+  return conn.WriteMessage(websocket.TextMessage, []byte(question.Question))
 }
+
 
 /// Handles binary message to websocket
 func (lobby *Lobby) handleBinaryMessage(myIndex byte, message []byte) error {
