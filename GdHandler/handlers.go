@@ -34,6 +34,27 @@ func (lobby *Lobby) handleTextMessage(myIndex byte, message []byte, conn *websoc
     return errors.New(("handleTextMessage: error getting team\n") + err.Error())
   }
 
+  if _question.Hint == "true" {
+    hint, points, err := DB.GetHintTryHard(_question.ID, 5)
+    if err != nil {
+      return errors.New(("handleTextMessage: get hint\n ") + err.Error())
+    }
+    
+    team.Points -= points
+
+    err = team.SyncTryHard(5)
+    if err != nil {
+      return errors.New(("handleTextMessage: sync error\n ") + err.Error())
+    }
+
+    retval, err := json.Marshal(struct{Hint string}{hint})
+    if err != nil {
+      return errors.New(("handleTextMessage: json Marshal error\n ") + err.Error())
+    }
+
+    return conn.WriteMessage(websocket.TextMessage, retval)
+  }
+
   if _question.Answer != "" {
     correct, err := team.CheckAnswer(_question.ID, _question.Answer, 5)
     if err != nil {
@@ -56,10 +77,27 @@ func (lobby *Lobby) handleTextMessage(myIndex byte, message []byte, conn *websoc
   if err != nil {
     return errors.New(("handleTextMessage: error getting question\n ") + err.Error())
   }
+
   if question.Level != team.Level {
     return errors.New("handleTextMessage: Level mismatch")
   }
-  return conn.WriteMessage(websocket.TextMessage, []byte(question.Question))
+  
+  retval, err := json.Marshal(struct{
+    Question   string
+    Level      int
+    Hint       string
+    HintPoints int
+  }{
+    question.Question,
+    question.Level,
+    question.Hint,
+    question.HintPoints,
+  })
+  if err != nil {
+    return errors.New(("handleTextMessage: json Marshal error\n ") + err.Error())
+  }
+
+  return conn.WriteMessage(websocket.TextMessage, retval)
 }
 
 
