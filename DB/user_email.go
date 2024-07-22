@@ -2,11 +2,10 @@ package DB
 
 import (
   "time"
-  
   "bytes"
+  "net/smtp"
   "encoding/hex"
   "html/template"
-  "net/smtp"
 
   "go.mongodb.org/mongo-driver/bson"
 )

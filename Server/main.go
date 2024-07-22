@@ -21,25 +21,26 @@ func Start(ip string, prepend string) {
     log.Fatal("Secret path is too short")
   }
 
-  /// Disable Color to make file readable
+  /// Logging options
   gin.DisableConsoleColor()
-
-  /// Log to a file.
   gin.DefaultWriter = writer
 
   router := gin.Default()
 
-  /// Get Leaderbord Route
-  router.GET("/leaderboard/:width/:page", leaderboardHandler)
-
   /// Logs are displayed at this route
   router.GET("/" + secret + "/:width/:page", handleLogs)
+
+  /// Get Leaderbord Route
+  router.GET("/leaderboard/:width/:page", leaderboardHandler)
 
   /// The signup route
   router.POST("/signup", signupHandler)
 
   /// The authantication route
   router.POST("/authanticate", authanticationHandler)
+
+  /// Get team members
+  router.POST("/teaminfo", teamInfoHandler)
 
   /// Get the lobbyID
   router.POST("/getlobby", getLobbyHandler)

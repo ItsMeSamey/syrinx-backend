@@ -1,8 +1,6 @@
 package Server
 
 import (
-  "log"
-  "strconv"
   "net/http"
   "encoding/hex"
   
@@ -10,44 +8,7 @@ import (
   "ccs.ctf/GdHandler"
   
   "github.com/gin-gonic/gin"
-  "go.mongodb.org/mongo-driver/bson"
-  "go.mongodb.org/mongo-driver/mongo/options"
 )
-
-func leaderboardHandler(c *gin.Context) {
-  width, err := strconv.Atoi(c.Param("width"))
-  if err != nil {
-    setErrorJson(c, http.StatusBadRequest, "width parsing error\n" + err.Error())
-  }
-  page, err := strconv.Atoi(c.Param("page"))
-  if err != nil {
-    setErrorJson(c, http.StatusBadRequest, "page parsing error\n" + err.Error())
-  }
-
-  batchSize := int32(width)
-  limit := int64(width)
-  skip := limit*int64(page)
-  cursor, err :=  DB.TeamDB.Coll.Find(DB.TeamDB.Context, bson.M{}, &options.FindOptions{
-    BatchSize: &batchSize,
-    Sort: bson.M{"points": 1},
-    Limit: &limit,
-    Skip: &skip,
-  })
-  if err != nil {
-    setErrorJson(c, http.StatusInternalServerError, err.Error())
-  }
-
-  var teams []struct{
-    N string `bson:"teamName"`
-    P int    `bson:"points"`
-    L int    `bson:"level"`
-  }
-  if err = cursor.All(DB.TeamDB.Context, &teams); err != nil {
-    setErrorJson(c, http.StatusInternalServerError, err.Error())
-  }
-  
-  c.JSON(http.StatusOK, teams)
-}
 
 /// Function to call on signup request
 func signupHandler(c *gin.Context) {
@@ -110,20 +71,6 @@ func getLobbyHandler(c *gin.Context) {
   setSuccessJson(c, gin.H{"LobbyID": hex.EncodeToString((*lobbyObj)[:])})
 }
 
-func lobbyHandler(c *gin.Context) {
-  ID, err := hex.DecodeString(c.Param("lobbyID"))
-  if err != nil {
-    setErrorJson(c, http.StatusInternalServerError, err.Error())
-    return
-  }
-
-  if len(ID) != 12 {
-    setErrorJson(c, http.StatusInternalServerError, "lobbyHandler: LobbyID length mismatch")
-    return
-  }
-
-  if err := GdHandler.ConnectToLobby(DB.ObjID(ID), c); err != nil {
-    log.Println(err)
-  }
+func teamInfoHandler(c *gin.Context) {
 }
 
