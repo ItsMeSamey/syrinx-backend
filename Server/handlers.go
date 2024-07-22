@@ -2,6 +2,7 @@ package Server
 
 import (
   "log"
+  "strconv"
   "net/http"
   "encoding/hex"
   
@@ -9,10 +10,41 @@ import (
   "ccs.ctf/GdHandler"
   
   "github.com/gin-gonic/gin"
+  "go.mongodb.org/mongo-driver/bson"
+  "go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func leaderboardHandler(c *gin.Context) {
-  return
+  width, err := strconv.Atoi(c.Param("width"))
+  if err != nil {
+    setErrorJson(c, http.StatusBadRequest, "width parsing error\n" + err.Error())
+  }
+  page, err := strconv.Atoi(c.Param("page"))
+  if err != nil {
+    setErrorJson(c, http.StatusBadRequest, "page parsing error\n" + err.Error())
+  }
+
+  limit := int64(width)
+  skip := limit*int64(page)
+  cursor, err :=  DB.TeamDB.Coll.Find(DB.TeamDB.Context, bson.M{}, &options.FindOptions{
+    Sort: bson.M{"points": 1},
+    Limit: &limit,
+    Skip: &skip,
+  })
+  if err != nil {
+    setErrorJson(c, http.StatusInternalServerError, err.Error())
+  }
+
+  var teams []struct{
+    N string `bson:"teamName"`
+    P int    `bson:"points"`
+    L int    `bson:"level"`
+  }
+  if err = cursor.All(DB.TeamDB.Context, &teams); err != nil {
+    setErrorJson(c, http.StatusInternalServerError, err.Error())
+  }
+  
+  c.JSON(http.StatusOK, teams)
 }
 
 /// Function to call on signup request

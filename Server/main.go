@@ -30,7 +30,7 @@ func Start(ip string, prepend string) {
   router := gin.Default()
 
   /// Get Leaderbord Route
-  router.GET("/lobby/:length", leaderboardHandler)
+  router.GET("/leaderboard/:width/:page", leaderboardHandler)
 
   /// Logs are displayed at this route
   router.GET("/" + secret + "/:width/:page", handleLogs)
