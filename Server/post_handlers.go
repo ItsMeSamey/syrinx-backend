@@ -6,6 +6,7 @@ import (
   
   "ccs.ctf/DB"
   "ccs.ctf/GdHandler"
+  "go.mongodb.org/mongo-driver/bson"
   
   "github.com/gin-gonic/gin"
 )
@@ -72,5 +73,39 @@ func getLobbyHandler(c *gin.Context) {
 }
 
 func teamInfoHandler(c *gin.Context) {
+  type TeamMate struct {
+    Username  string `bson:"user"`
+    Email     string `bson:"mail"`
+    DiscordID string `bson:"discordID"`
+  }
+
+  var userID struct { SessionID DB.SessID }
+
+  if err := bindJson(c, &userID); err != nil {
+    setErrorJson(c, http.StatusBadRequest, err.Error())
+    return
+  }
+
+  if userID.SessionID == nil {
+    setErrorJson(c, http.StatusBadRequest, "SessionID is required")
+    return
+  }
+
+  user, err := DB.UserFromSessionID(userID.SessionID)
+  if err != nil {
+    setErrorJson(c, http.StatusBadRequest, err.Error())
+    return
+  }
+
+  cursor, err := DB.UserDB.Coll.Find(DB.UserDB.Context, bson.M{"teamID": user.TeamID})
+
+  var all []TeamMate
+  err = cursor.All(DB.UserDB.Context, &all)
+  if err != nil {
+    setErrorJson(c, http.StatusInternalServerError, err.Error())
+    return
+  }
+
+  setSuccessJson(c, gin.H{"T": user.TeamID, "M": user.Username, "A": all})
 }
 
