@@ -1,42 +1,13 @@
 package GdHandler
 
 import (
-  "sync"
   "time"
   "errors"
-  "net/http"
   
   "ccs.ctf/DB"
 
   "github.com/gin-gonic/gin"
-  "github.com/gorilla/websocket"
-  "go.mongodb.org/mongo-driver/bson/primitive"
 )
-
-var (
-  lobbies map[primitive.ObjectID]*Lobby = make(map[primitive.ObjectID]*Lobby)
-  lobbiesMutex sync.RWMutex = sync.RWMutex{}
-)
-
-/// Function to make an empty lobby struct
-func makeLobby(ID DB.ObjID) (*Lobby, error) {
-  lobby, err := DB.LobbyFromID(ID)
-  if err != nil {
-    return nil, err
-  }
-
-  if err := lobby.PopulateTeams(); err != nil {
-    return nil, errors.New("makeLobby: Lobby.populateTeams error\n" + err.Error())
-  }
-
-  return &Lobby {
-    Lobby: lobby,
-    Playercount: 0,
-    PlayerMutex: sync.RWMutex{},
-    Upgrader: websocket.Upgrader{ ReadBufferSize:  1024, WriteBufferSize: 1024, CheckOrigin: func(r *http.Request) bool {return true}},
-    Deadtime: 0,
-  }, nil
-}
 
 //! WARNING: DO NOT MESS WITH THIS UNLESS YOU KNOW WHAT YOU ARE DOING
 /// Connect to a lobby if one exists or add it to the lobby map

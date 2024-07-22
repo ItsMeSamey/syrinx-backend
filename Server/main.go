@@ -1,11 +1,20 @@
 package Server
 
 import (
+  "io"
   "os"
   "log"
   
   "github.com/gin-gonic/gin"
   "github.com/gin-contrib/cors"
+)
+
+var (
+  /// Where the log is written to
+  writer io.Writer = nil
+  file *os.File = nil
+  /// The remote origin to allow
+  origin = os.Getenv("ORIGIN")
 )
 
 /// This gunction Starts the frontend Server
@@ -17,17 +26,23 @@ func Start(ip string, prepend string) {
 
   secret := os.Getenv("SECRET_PATH")
   if secret == "" {
-     log.Fatal("Secret path not provided")
+    log.Fatal("Secret path not provided")
   } else if len(secret) < 8 {
     log.Fatal("Secret path is too short")
   }
 
+  if len(origin) == 0 {
+    log.Fatal("`ORIGIN` not set")
+  }
+  
   /// Logging options
   gin.DisableConsoleColor()
   gin.DefaultWriter = writer
 
   router := gin.Default()
-  router.Use(cors.Default())
+  router.Use(cors.New(cors.Config{
+    AllowOrigins: []string{origin},
+  }))
 
 
   /// Logs are displayed at this route

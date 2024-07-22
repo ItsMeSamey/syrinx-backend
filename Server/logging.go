@@ -13,12 +13,6 @@ import (
   "github.com/gin-gonic/gin"
 )
 
-/// Where the log is written to
-var (
-  writer io.Writer = nil
-  file *os.File = nil
-)
-
 func initLogger() {
   var err error
 

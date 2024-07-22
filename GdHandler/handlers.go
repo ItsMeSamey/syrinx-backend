@@ -10,8 +10,6 @@ import (
   "github.com/gorilla/websocket"
 )
 
-const MAX_TRIES = 5
-
 func (lobby *Lobby) getTeam(myIndex byte) (*DB.Team, error) {
   myTeam := lobby.Lobby.Players[myIndex].TeamID
   for i := range lobby.Lobby.Teams {
