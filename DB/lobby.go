@@ -1,11 +1,11 @@
 package DB
 
 import (
-	"errors"
-	"log"
-
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+  "errors"
+  "log"
+  
+  "go.mongodb.org/mongo-driver/bson"
+  "go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 /// Struct meant to be used in GdIntegration
@@ -24,6 +24,31 @@ type Lobby struct {
 }
 
 const MAX_TEAMS = 4
+
+
+func (lobby *Lobby) PopulateTeams() error {
+  teams := []Team{}
+  for _, player := range lobby.Players {
+    exists := false
+    for _, _team := range teams {
+      if *(_team.TeamID) == *(player.TeamID) {
+        exists = true
+        break
+      }
+    }
+    if exists {
+      continue
+    }
+
+    var team Team
+    err := TeamDB.get(bson.M{"teamID": player.TeamID}, &team)
+    if err != nil {
+      return errors.New("populateTeams: DB.get error\n" + err.Error())
+    }
+    teams = append(teams, team)
+  }
+  return nil
+}
 
 /// Convert LobbyTemplate to a real lobby
 func (lobby *Lobby) CreateInsert() error {

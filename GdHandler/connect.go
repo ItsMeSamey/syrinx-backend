@@ -23,6 +23,10 @@ func makeLobby(ID DB.ObjID) (*Lobby, error) {
     return nil, err
   }
 
+  if err := lobby.PopulateTeams(); err != nil {
+    return nil, errors.New("makeLobby: Lobby.populateTeams error\n" + err.Error())
+  }
+
   return &Lobby {
     Lobby: lobby,
     Playercount: 0,
