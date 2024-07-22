@@ -5,6 +5,7 @@ import (
   "sync"
   "errors"
   "strconv"
+  "net/http"
 
   "ccs.ctf/DB"
 
@@ -44,7 +45,7 @@ func LobbyIDFromUserSessionID(SessionID DB.SessID) (DB.ObjID, error) {
     Lobby: nil,
     Playercount: 0,
     PlayerMutex: sync.RWMutex{},
-    Upgrader: websocket.Upgrader{ ReadBufferSize:  1024, WriteBufferSize: 1024 },
+    Upgrader: websocket.Upgrader{ ReadBufferSize:  1024, WriteBufferSize: 1024, CheckOrigin: func(r *http.Request) bool {return true}},
     Deadtime: 0,
   }
 
@@ -76,7 +77,7 @@ func LobbyIDFromUserSessionID(SessionID DB.SessID) (DB.ObjID, error) {
     if !ok {
       go watchdog(insertable)
     }
-    return template.ID, nil
+    return lobby.ID, nil
   }
 
   // Creating a new lobby
@@ -92,7 +93,7 @@ func LobbyIDFromUserSessionID(SessionID DB.SessID) (DB.ObjID, error) {
   lobbiesMutex.Unlock()
 
   go watchdog(insertable)
-  return lobby.ID, nil
+  return template.ID, nil
 }
 
 /// The lobby handling function responsible for connecting players to their respective lobby

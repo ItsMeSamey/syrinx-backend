@@ -4,6 +4,7 @@ import (
   "sync"
   "time"
   "errors"
+  "net/http"
   
   "ccs.ctf/DB"
 
@@ -32,7 +33,7 @@ func makeLobby(ID DB.ObjID) (*Lobby, error) {
     Lobby: lobby,
     Playercount: 0,
     PlayerMutex: sync.RWMutex{},
-    Upgrader: websocket.Upgrader{ ReadBufferSize:  1024, WriteBufferSize: 1024 },
+    Upgrader: websocket.Upgrader{ ReadBufferSize:  1024, WriteBufferSize: 1024, CheckOrigin: func(r *http.Request) bool {return true}},
     Deadtime: 0,
   }, nil
 }

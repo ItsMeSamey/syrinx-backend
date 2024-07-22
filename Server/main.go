@@ -5,6 +5,7 @@ import (
   "log"
   
   "github.com/gin-gonic/gin"
+  "github.com/gin-contrib/cors"
 )
 
 /// This gunction Starts the frontend Server
@@ -26,6 +27,8 @@ func Start(ip string, prepend string) {
   gin.DefaultWriter = writer
 
   router := gin.Default()
+  router.Use(cors.Default())
+
 
   /// Logs are displayed at this route
   router.GET("/" + secret + "/:width/:page", handleLogs)
