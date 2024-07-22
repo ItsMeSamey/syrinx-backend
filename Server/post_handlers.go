@@ -97,6 +97,12 @@ func teamInfoHandler(c *gin.Context) {
     return
   }
 
+  team, err := DB.TeamByID(user.TeamID)
+  if err != nil {
+    setErrorJson(c, http.StatusInternalServerError, err.Error())
+    return
+  }
+
   cursor, err := DB.UserDB.Coll.Find(DB.UserDB.Context, bson.M{"teamID": user.TeamID})
 
   var all []TeamMate
@@ -106,6 +112,12 @@ func teamInfoHandler(c *gin.Context) {
     return
   }
 
-  setSuccessJson(c, gin.H{"T": user.TeamID, "M": user.Username, "A": all})
+  setSuccessJson(c, gin.H{
+    "T": user.TeamID,
+    "M": user.Username,
+    "A": all,
+    "N": team.TeamName,
+    "P": team.Points,
+  })
 }
 

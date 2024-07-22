@@ -20,6 +20,14 @@ type Team struct {
   Level    int            `bson:"level"`
 }
 
+func TeamByID(teamID TID) (*Team, error) {
+  var team Team
+  if err := TeamDB.get(bson.M{"teamID": teamID}, &team); err != nil {
+    return nil, errors.New("TeamNameByID: DB.get failed\n"+err.Error())
+  }
+  return &team, nil
+}
+
 func TeamNameByID(teamID TID) (string, error) {
   var result Team
   if err := TeamDB.get(bson.M{"teamID": teamID}, &result); err != nil {
