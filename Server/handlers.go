@@ -1,14 +1,9 @@
 package Server
 
 import (
-  "encoding/base64"
-  "encoding/hex"
-  "encoding/json"
-  "errors"
-  "fmt"
-  "io"
   "log"
   "net/http"
+  "encoding/hex"
   
   "ccs.ctf/DB"
   "ccs.ctf/GdHandler"
@@ -16,52 +11,8 @@ import (
   "github.com/gin-gonic/gin"
 )
 
-func bindJson(c *gin.Context, obj any) error {
-  jsonData, err := io.ReadAll(c.Request.Body)
-  if err != nil {
-    return errors.New("Server.bindJson error: \n" + err.Error())
-  }
-
-  /// Logging code
-  writer.Write([]byte("\n>>>>>\n>> "))
-  writer.Write(jsonData)
-  writer.Write([]byte("\n<< "))
-  /// Logging
-
-  err = json.Unmarshal(jsonData, obj);
-  if err != nil {
-    return errors.New("Server.bindJson error: \n" + err.Error())
-  }
-  return nil
-}
-
-/// Easily extensible for logging
-func setJson(c *gin.Context, code int, json gin.H) {
-  /// Logging code
-  for key, value := range json {
-    writer.Write([]byte(key))
-    writer.Write([]byte(": "))
-    switch t := value.(type) {
-    case []byte:
-      writer.Write([]byte(base64.StdEncoding.EncodeToString(t)))
-    default:
-      writer.Write([]byte(fmt.Sprintf("%v", value)))
-    }
-    writer.Write([]byte("\n"))
-  }
-  writer.Write([]byte("<<<<< "))
-  /// Logging
-
-  c.JSON(code, json)
-}
-
-func setSuccessJson(c *gin.Context, json gin.H) {
-  setJson(c, http.StatusOK, json)
-}
-
-func setErrorJson(c *gin.Context, code int, errstr string) {
-  // go func(){ _, _ = writer.Write([]byte(errstr)) }()
-  setJson(c, code, gin.H{"error": errstr})
+func leaderboardHandler(c *gin.Context) {
+  return
 }
 
 /// Function to call on signup request
@@ -138,9 +89,7 @@ func lobbyHandler(c *gin.Context) {
   }
 
   if err := GdHandler.ConnectToLobby(DB.ObjID(ID), c); err != nil {
-    // setErrorJson(c, http.StatusInternalServerError, "lobbyHandler: Lobby creation error\n" + err.Error())
     log.Println(err)
   }
-  // setSuccessJson(c, gin.H{"Success": true})
 }
 
