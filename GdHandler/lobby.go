@@ -62,13 +62,13 @@ func LobbyIDFromUserSessionID(SessionID DB.SessID) (DB.ObjID, error) {
 
     insertable.Lobby = lobby
     lobbiesMutex.Lock()
-    val, ok := lobbies[*lobby.ID]
+    val, ok := lobbies[*(lobby.ID)]
     if ok {
       // Lobby already active, updating
       val.Lobby = lobby
     } else {
       // Make lobby active
-      lobbies[*lobby.ID] = insertable
+      lobbies[*(lobby.ID)] = insertable
     }
     lobbiesMutex.Unlock()
 
@@ -87,7 +87,7 @@ func LobbyIDFromUserSessionID(SessionID DB.SessID) (DB.ObjID, error) {
   insertable.Lobby = template
   // Activating the new lobby
   lobbiesMutex.Lock()
-  lobbies[*lobby.ID] = insertable
+  lobbies[*(template.ID)] = insertable
   lobbiesMutex.Unlock()
 
   go watchdog(insertable)
