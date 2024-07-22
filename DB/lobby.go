@@ -23,9 +23,6 @@ type Lobby struct {
   IsComplete bool     `bson:"isComplete"`
 }
 
-const MAX_TEAMS = 4
-
-
 func (lobby *Lobby) PopulateTeams() error {
   teams := []Team{}
   for _, player := range lobby.Players {

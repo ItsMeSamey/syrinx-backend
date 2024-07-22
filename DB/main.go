@@ -12,6 +12,7 @@ import (
   "go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+/// The Extendable Collection type
 type Collection struct {
   Coll *mongo.Collection
   Context context.Context
@@ -22,19 +23,22 @@ type TID *[3]byte
 type SessID *[64]byte
 type ObjID *primitive.ObjectID
 
-/// The main Database
-var DATABASE *mongo.Database
+const (
+  /// Number of teams in a lobby
+  MAX_TEAMS = 4
+)
 
-/// All the DB declarations
 var (
+  /// The main Database
+  DATABASE *mongo.Database
+
+  /// All the DB declarations
   QuestionDB Collection
   UserDB Collection
   TeamDB Collection
   LobbyDB Collection
-) 
 
-/// Initialize env vars
-var (
+  /// Initialize env vars
   EMAIL_SENDER = os.Getenv("EMAIL_SENDER")
   EMAIL_SENDER_PASSWORD = os.Getenv("EMAIL_SENDER_PASSWORD")
 )

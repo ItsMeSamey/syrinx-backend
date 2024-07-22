@@ -6,9 +6,9 @@ import (
   
   "ccs.ctf/DB"
   "ccs.ctf/GdHandler"
-  "go.mongodb.org/mongo-driver/bson"
   
   "github.com/gin-gonic/gin"
+  "go.mongodb.org/mongo-driver/bson"
 )
 
 /// Function to call on signup request
