@@ -24,9 +24,11 @@ func leaderboardHandler(c *gin.Context) {
     setErrorJson(c, http.StatusBadRequest, "page parsing error\n" + err.Error())
   }
 
+  batchSize := int32(width)
   limit := int64(width)
   skip := limit*int64(page)
   cursor, err :=  DB.TeamDB.Coll.Find(DB.TeamDB.Context, bson.M{}, &options.FindOptions{
+    BatchSize: &batchSize,
     Sort: bson.M{"points": 1},
     Limit: &limit,
     Skip: &skip,
