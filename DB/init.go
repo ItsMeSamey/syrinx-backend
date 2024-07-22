@@ -119,7 +119,10 @@ func (db *Collection) getExists(bsonM bson.M, out any) (bool, error) {
 }
 
 func (db *Collection) get(bsonM bson.M, out any) error {
-  _, err := db.getExists(bsonM, out)
+  exists, err := db.getExists(bsonM, out)
+  if !exists {
+    return errors.New("DB.get: document does not exist")
+  }
   return err
 }
 

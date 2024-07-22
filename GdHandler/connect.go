@@ -33,38 +33,6 @@ func makeLobby(ID DB.ObjID) (*Lobby, error) {
 }
 
 //! WARNING: DO NOT MESS WITH THIS UNLESS YOU KNOW WHAT YOU ARE DOING
-/// Automatically close the lobby when there is no one in it
-/// This function bocks (a long as lobby exists),
-/// and probably should be async
-func watchdog(lobby *Lobby) {
-  lobby.Deadtime = 0
-  sleepTime := (30 + (lobby.Lobby.ID[0]&31))
-begin:
-  time.Sleep(time.Duration(sleepTime) * time.Second)
-  lobby.PlayerMutex.RLock()
-  if lobby.Playercount == 0 {
-    lobby.Deadtime += 1
-  }
-  lobby.PlayerMutex.RUnlock()
-
-  if lobby.Deadtime >= 10 { // Lobby timeout 5~10 minutes
-    lobbiesMutex.Lock()
-    lobby.PlayerMutex.Lock()
-    if lobby.Playercount == 0 {
-      // Delete the lobby
-      delete(lobbies, *lobby.Lobby.ID);
-      lobby.PlayerMutex.Unlock()
-      lobbiesMutex.Unlock()
-      return
-    }
-    lobby.Deadtime = 0
-    lobby.PlayerMutex.Unlock()
-    lobbiesMutex.Unlock()
-  }
-  goto begin
-}
-
-//! WARNING: DO NOT MESS WITH THIS UNLESS YOU KNOW WHAT YOU ARE DOING
 /// Connect to a lobby if one exists or add it to the lobby map
 func ConnectToLobby(ID DB.ObjID, c *gin.Context) error {
   start:
@@ -100,5 +68,37 @@ func ConnectToLobby(ID DB.ObjID, c *gin.Context) error {
       return val.wsHandler(c)
     }
   }
+}
+
+//! WARNING: DO NOT MESS WITH THIS UNLESS YOU KNOW WHAT YOU ARE DOING
+/// Automatically close the lobby when there is no one in it
+/// This function bocks (a long as lobby exists),
+/// and probably should be async
+func watchdog(lobby *Lobby) {
+  lobby.Deadtime = 0
+  sleepTime := (30 + (lobby.Lobby.ID[0]&31))
+begin:
+  time.Sleep(time.Duration(sleepTime) * time.Second)
+  lobby.PlayerMutex.RLock()
+  if lobby.Playercount == 0 {
+    lobby.Deadtime += 1
+  }
+  lobby.PlayerMutex.RUnlock()
+
+  if lobby.Deadtime >= 10 { // Lobby timeout 5~10 minutes
+    lobbiesMutex.Lock()
+    lobby.PlayerMutex.Lock()
+    if lobby.Playercount == 0 {
+      // Delete the lobby
+      delete(lobbies, *lobby.Lobby.ID);
+      lobby.PlayerMutex.Unlock()
+      lobbiesMutex.Unlock()
+      return
+    }
+    lobby.Deadtime = 0
+    lobby.PlayerMutex.Unlock()
+    lobbiesMutex.Unlock()
+  }
+  goto begin
 }
 

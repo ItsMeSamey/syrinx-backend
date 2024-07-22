@@ -1,10 +1,11 @@
 package DB
 
 import (
-  "errors"
-  
-  "go.mongodb.org/mongo-driver/bson"
-  "go.mongodb.org/mongo-driver/bson/primitive"
+	"errors"
+	"log"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 /// Struct meant to be used in GdIntegration
@@ -21,6 +22,8 @@ type Lobby struct {
   Teams      []Team   `bson:"-"`
   IsComplete bool     `bson:"isComplete"`
 }
+
+const MAX_TEAMS = 4
 
 /// Convert LobbyTemplate to a real lobby
 func (lobby *Lobby) CreateInsert() error {
@@ -39,6 +42,7 @@ func (lobby *Lobby) CreateInsert() error {
   }
 
   lobby.ID = &ID
+  lobby.IsComplete = len(lobby.Teams) >= MAX_TEAMS || lobby.IsComplete
 
   return nil
 }
@@ -47,11 +51,17 @@ func (lobby *Lobby) Sync(maxTries byte) error {
   return LobbyDB.syncTryHard(bson.M{"_id": lobby.ID}, lobby, maxTries)
 }
 
-func GetIncompleteLobby() (*Lobby, bool, error) {
-  var lobby Lobby
-  
-  exists, err := LobbyDB.getExists(bson.M{"isComplete": false}, &lobby)
-  return &lobby, exists, err
+func (lobby *Lobby) Merge(lobbyTemplate *Lobby) {
+
+  if lobby.IsComplete {
+    log.Println("Merge called on complete lobby !!")
+  }
+
+  /// Add to the existing lobby
+  lobby.Players = append(lobby.Players, lobbyTemplate.Players...)
+  lobby.Teams = append(lobby.Teams, lobbyTemplate.Teams...)
+
+  lobby.IsComplete = len(lobby.Teams) >= MAX_TEAMS || lobby.IsComplete
 }
 
 func LobbyFromID(lobbyID ObjID) (*Lobby, error) {
@@ -64,8 +74,23 @@ func LobbyFromID(lobbyID ObjID) (*Lobby, error) {
   return &lobby, nil
 }
 
+func GetIncompleteLobby() (*Lobby, bool, error) {
+  var lobby Lobby
+  
+  exists, err := LobbyDB.getExists(bson.M{"isComplete": false}, &lobby)
+
+  if err != nil {
+    return nil, false, errors.New("Lobby.Sync error\n" + err.Error())
+  }
+  
+  if !exists {
+    return nil, false, nil
+  }
+
+  return &lobby, true, nil
+}
+
 /// Get a lobby in which user is meant to be
-/// Creates a new one it they are joining new
 func LobbyFromUserSessionID(SessionID SessID) (*Lobby, bool, error) {
   var lobby Lobby
 
@@ -75,10 +100,18 @@ func LobbyFromUserSessionID(SessionID SessID) (*Lobby, bool, error) {
     },
   }, &lobby)
 
-  return &lobby, exists, err
+  if err != nil {
+    return nil, false, errors.New("LobbyFromUserSessionID error\n" + err.Error())
+  }
+  
+  if !exists {
+    return nil, false, nil
+  }
+
+  return &lobby, true, nil
 }
 
-/// Adds a user and their team to a lobby if one exists or create a new one for them
+/// Create a lobby template with nil ID
 func NewLobbyTemplate(SessionID SessID) (*Lobby, error) {
   /// Get the user object (to get the team ID)
   var user User
@@ -104,32 +137,11 @@ func NewLobbyTemplate(SessionID SessID) (*Lobby, error) {
   }
 
   /// Try to find a partially vacant lobby
-
   return &Lobby{
     ID: nil,
     Players: players,
     Teams: []Team{team},
-    IsComplete: false,
+    IsComplete: 1 == MAX_TEAMS,
   }, nil
-
-  /// Add to the existing lobby
-  // var lobby Lobby
-  // err = result.Decode(&lobby)
-  // if err != nil {
-  //   return nil, errors.New("createLobby: result.Decode error\n" + err.Error())
-  // }
-  //
-  // lobby.Players = append(lobby.Players, players...)
-  // lobby.Teams = append(lobby.Teams, team)
-  // if len(lobby.Teams) >= 4 {
-  //   lobby.IsComplete = true
-  // }
-  //
-  // _, err = LobbyDB.Coll.ReplaceOne(LobbyDB.Context, bson.M{"_id": lobby.ID}, lobby)
-  // if err != nil {
-  //   return nil, errors.New("createLobby: Replace One error\n" + err.Error())
-  // }
-  //
-  // return &lobby, nil
 }
 
