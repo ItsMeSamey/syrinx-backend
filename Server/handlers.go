@@ -7,6 +7,7 @@ import (
   "errors"
   "fmt"
   "io"
+  "log"
   "net/http"
   
   "ccs.ctf/DB"
@@ -115,13 +116,13 @@ func getLobbyHandler(c *gin.Context) {
     return
   }
 
-  lobbyObj, err := DB.LobbyFromUserSessionID(user.SessionID)
+  lobbyObj, err := GdHandler.LobbyIDFromUserSessionID(user.SessionID)
   if err != nil {
     setErrorJson(c, http.StatusInternalServerError, err.Error())
     return
   }
 
-  setSuccessJson(c, gin.H{"LobbyID": hex.EncodeToString((*lobbyObj.ID)[:])})
+  setSuccessJson(c, gin.H{"LobbyID": hex.EncodeToString((*lobbyObj)[:])})
 }
 
 func lobbyHandler(c *gin.Context) {
@@ -137,11 +138,9 @@ func lobbyHandler(c *gin.Context) {
   }
 
   if err := GdHandler.ConnectToLobby(DB.ObjID(ID), c); err != nil {
-    return
-    setErrorJson(c, http.StatusInternalServerError, "lobbyHandler: Lobby creation error\n" + err.Error())
-    return
+    // setErrorJson(c, http.StatusInternalServerError, "lobbyHandler: Lobby creation error\n" + err.Error())
+    log.Println(err)
   }
-return
-  setSuccessJson(c, gin.H{"Success": true})
+  // setSuccessJson(c, gin.H{"Success": true})
 }
 

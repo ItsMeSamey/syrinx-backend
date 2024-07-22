@@ -5,7 +5,6 @@ import (
   
   "go.mongodb.org/mongo-driver/bson"
   "go.mongodb.org/mongo-driver/bson/primitive"
-  "go.mongodb.org/mongo-driver/mongo"
 )
 
 /// Struct meant to be used in GdIntegration
@@ -23,10 +22,42 @@ type Lobby struct {
   IsComplete bool     `bson:"isComplete"`
 }
 
+/// Convert LobbyTemplate to a real lobby
+func (lobby *Lobby) CreateInsert() error {
+  if lobby.ID != nil {
+    return errors.New("Lobby.CreateInsert: called on already existing lobby")
+  }
+
+  insertOneResult, err := LobbyDB.Coll.InsertOne(LobbyDB.Context, lobby)
+  if err != nil {
+    return errors.New("Lobby.CreateInsert: InsertOne error\n" + err.Error())
+  }
+
+  ID, ok := insertOneResult.InsertedID.(primitive.ObjectID)
+  if !ok {
+    return errors.New("Lobby.CreateInsert: Id was not object ID")
+  }
+
+  lobby.ID = &ID
+
+  return nil
+}
+
+func (lobby *Lobby) Sync(maxTries byte) error {
+  return LobbyDB.syncTryHard(bson.M{"_id": lobby.ID}, lobby, maxTries)
+}
+
+func GetIncompleteLobby() (*Lobby, bool, error) {
+  var lobby Lobby
+  
+  exists, err := LobbyDB.getExists(bson.M{"isComplete": false}, &lobby)
+  return &lobby, exists, err
+}
+
 func LobbyFromID(lobbyID ObjID) (*Lobby, error) {
   var lobby Lobby
   
-  if err := LobbyDB.get("_id", lobbyID, &lobby); err != nil {
+  if err := LobbyDB.get(bson.M{"_id": lobbyID}, &lobby); err != nil {
     return nil, errors.New("LobbyFromID: DB.get error\n" + err.Error())
   }
 
@@ -35,108 +66,70 @@ func LobbyFromID(lobbyID ObjID) (*Lobby, error) {
 
 /// Get a lobby in which user is meant to be
 /// Creates a new one it they are joining new
-func LobbyFromUserSessionID(SessionID SessID) (*Lobby, error) {
-  query := bson.M{
+func LobbyFromUserSessionID(SessionID SessID) (*Lobby, bool, error) {
+  var lobby Lobby
+
+  exists, err := LobbyDB.getExists(bson.M{
     "players": bson.M{
       "$elemMatch": bson.M{ "sessionID": SessionID, },
     },
-  }
+  }, &lobby)
 
-  result := LobbyDB.Coll.FindOne(LobbyDB.Context, query)
-  err := result.Err()
-
-  if err == mongo.ErrNoDocuments{
-    // User are in no lobby, create a new one or add to existing
-    return createLobby(SessionID)
-  } else if err != nil {
-    return nil, errors.New("LobbyFromUserSessionID: DB.get error\n" + err.Error())
-  }
-
-  var lobby Lobby
-  if err := result.Decode(&lobby); err != nil {
-    return nil, errors.New("LobbyFromUserSessionID: Decode error\n" + err.Error())
-  }
-  return &lobby, nil
+  return &lobby, exists, err
 }
 
 /// Adds a user and their team to a lobby if one exists or create a new one for them
-func createLobby(SessionID SessID) (*Lobby, error) {
+func NewLobbyTemplate(SessionID SessID) (*Lobby, error) {
   /// Get the user object (to get the team ID)
   var user User
-  if err := UserDB.get("sessionID", SessionID, &user); err != nil {
-    return nil, errors.New("createLobby: UserDB.get error\n" + err.Error())
+  if err := UserDB.get(bson.M{"sessionID": SessionID}, &user); err != nil {
+    return nil, errors.New("NewLobbyTemplate: UserDB.get error\n" + err.Error())
   }
 
   /// get user's team
   var team Team
-  if err := TeamDB.get("teamID", user.TeamID, &team); err != nil {
-    return nil, errors.New("createLobby: TeamDB.get error\n" + err.Error())
+  if err := TeamDB.get(bson.M{"teamID": user.TeamID}, &team); err != nil {
+    return nil, errors.New("NewLobbyTemplate: TeamDB.get error\n" + err.Error())
   }
 
   /// Get all the players in that team
   cursor, err := UserDB.Coll.Find(UserDB.Context, bson.M{"teamID": user.TeamID})
   if err != nil {
-    return nil, errors.New("createLobby: Find error\n" + err.Error())
+    return nil, errors.New("NewLobbyTemplate: Find error\n" + err.Error())
   }
 
   var players []Player
   if err = cursor.All(UserDB.Context, &players); err != nil {
-    return nil, errors.New("createLobby: cursor.All error\n" + err.Error())
+    return nil, errors.New("NewLobbyTemplate: cursor.All error\n" + err.Error())
   }
 
   /// Try to find a partially vacant lobby
-  result := LobbyDB.Coll.FindOne(LobbyDB.Context, bson.M{"isComplete": false})
-  err = result.Err()
 
-  if err == mongo.ErrNoDocuments {
-    /// Create a brand new lobby
-    lobby := Lobby{
-      ID: nil,
-      Players: players,
-      Teams: []Team{team},
-      IsComplete: false,
-    }
-
-    insertOneResult, err := LobbyDB.Coll.InsertOne(LobbyDB.Context, lobby)
-    if err != nil {
-      return nil, errors.New("createLobby: InsertOne error\n" + err.Error())
-    }
-
-    ID, ok := insertOneResult.InsertedID.(primitive.ObjectID)
-    if !ok {
-      return nil, errors.New("createLobby: Id was not object ID")
-    }
-
-    lobby.ID = &ID
-
-    return &lobby, nil
-  } else if err != nil {
-    return nil, errors.New("createLobby: FindOne error\n" + err.Error())
-  }
+  return &Lobby{
+    ID: nil,
+    Players: players,
+    Teams: []Team{team},
+    IsComplete: false,
+  }, nil
 
   /// Add to the existing lobby
-  var lobby Lobby
-  err = result.Decode(&lobby)
-  if err != nil {
-    return nil, errors.New("createLobby: result.Decode error\n" + err.Error())
-  }
-
-  lobby.Players = append(lobby.Players, players...)
-  lobby.Teams = append(lobby.Teams, team)
-  if len(lobby.Teams) >= 4 {
-    lobby.IsComplete = true
-  }
-
-  _, err = LobbyDB.Coll.ReplaceOne(LobbyDB.Context, bson.M{"_id": lobby.ID}, lobby)
-  if err != nil {
-    return nil, errors.New("createLobby: Replace One error\n" + err.Error())
-  }
-
-  return &lobby, nil
-}
-
-func SaveLobby(lobby *Lobby) error {
-  _, err := LobbyDB.Coll.InsertOne(LobbyDB.Context, lobby)
-  return err
+  // var lobby Lobby
+  // err = result.Decode(&lobby)
+  // if err != nil {
+  //   return nil, errors.New("createLobby: result.Decode error\n" + err.Error())
+  // }
+  //
+  // lobby.Players = append(lobby.Players, players...)
+  // lobby.Teams = append(lobby.Teams, team)
+  // if len(lobby.Teams) >= 4 {
+  //   lobby.IsComplete = true
+  // }
+  //
+  // _, err = LobbyDB.Coll.ReplaceOne(LobbyDB.Context, bson.M{"_id": lobby.ID}, lobby)
+  // if err != nil {
+  //   return nil, errors.New("createLobby: Replace One error\n" + err.Error())
+  // }
+  //
+  // return &lobby, nil
 }
 

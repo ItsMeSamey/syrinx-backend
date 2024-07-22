@@ -19,6 +19,11 @@ type Lobby struct {
   Deadtime    byte
 }
 
+func LobbyIDFromUserSessionID(SessionID DB.SessID) (DB.ObjID, error) {
+  DB.LobbyFromUserSessionID_
+
+}
+
 /// The lobby handling function responsible for connecting players to their respective lobby
 func (lobby *Lobby) wsHandler(c *gin.Context) error {
   conn, err := lobby.Upgrader.Upgrade(c.Writer, c.Request, nil)

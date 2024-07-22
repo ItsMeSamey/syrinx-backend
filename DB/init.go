@@ -1,10 +1,10 @@
 package DB
 
 import (
-  "context"
-  "errors"
-  "log"
   "os"
+  "log"
+  "errors"
+  "context"
   
   "go.mongodb.org/mongo-driver/bson"
   "go.mongodb.org/mongo-driver/bson/primitive"
@@ -67,51 +67,63 @@ func InitDB(uri string) error {
   return nil
 }
 
-/// Get the result of a db quarry in a `out` object
-/// NOTE: `out` must be a pointer or Programme will panic !
-func (db *Collection) getBson(bsonM bson.M, out any) error {
-  result := db.Coll.FindOne(db.Context, bsonM)
-  if result == nil {
-    return errors.New("get: got a nil result")
+func (db *Collection) sync(bsonM bson.M, entry any) error {
+  result, err := db.Coll.ReplaceOne(db.Context, bsonM, entry);
+  if err != nil {
+    return errors.New("Error: DB.syncBson error\n" + err.Error())
   }
-
-  if err := result.Err(); err != nil {
-    return errors.New("DB.get: result error\n" + err.Error())
-  }
-
-  if err := result.Decode(out); err != nil {
-    return errors.New("DB.get: decode error\n" + err.Error())
+  
+  if result.MatchedCount == 0 {
+    return errors.New("Error: DB.syncBson failed, No document synced")
   }
 
   return nil
 }
 
-/// Get the result of a db quarry in a `out` object
-/// NOTE: `out` must be a pointer or Programme will panic !
-func (db *Collection) get(k string, v any, out any) error {
-  return db.getBson(bson.M{k: v}, out);
-}
+func (db *Collection) syncTryHard(bsonM bson.M, entry any, maxTries byte) error {
+  var tries byte = 0
 
-/// Check if a entry exists in a Collection
-func (db *Collection) existsBson(bsonM bson.M) (bool, error) {
-  result := db.Coll.FindOne(db.Context, bsonM)
-  if result == nil {
-    return false, errors.New("exists: got a nil result")
+  sync:
+  if err := db.sync(bsonM, entry); err != nil {
+    if tries > maxTries {
+      return errors.New("DB.syncBsonTryHard: Error in DB.syncBson, Max Tries reached\n" + err.Error())
+    }
+    tries += 1;
+    goto sync
   }
 
+  return nil
+}
+
+/// Get the result of a db quarry in a `out` object, returns true if the object exists
+/// NOTE: `out` must be a pointer or Programme will panic !
+func (db *Collection) getExists(bsonM bson.M, out any) (bool, error) {
+  result := db.Coll.FindOne(LobbyDB.Context, bsonM)
   err := result.Err()
-  if err == nil {
+
+  if err == mongo.ErrNoDocuments{
+    return false, nil
+  } else if err != nil {
+    return false, errors.New("getExistsBson: DB.FindOne error\n" + err.Error())
+  }
+
+  if out == nil {
     return true, nil
   }
-  if err == mongo.ErrNoDocuments {
-    return false, nil
+
+  if err := result.Decode(out); err != nil {
+    return false, errors.New("getExistsBson: result.Decode error\n" + err.Error())
   }
 
-  return false, errors.New("DB.exists: FindOne error\n" + err.Error())
+  return true, nil
 }
 
-/// Check if a entry exists in a Collection
-func (db *Collection) exists(k string, v any) (bool, error) {
-  return db.existsBson(bson.M{k: v})
+func (db *Collection) get(bsonM bson.M, out any) error {
+  _, err := db.getExists(bsonM, out)
+  return err
+}
+
+func (db *Collection) exists(bsonM bson.M) (bool, error) {
+  return db.getExists(bsonM, nil)
 }
 

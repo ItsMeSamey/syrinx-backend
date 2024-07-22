@@ -1,8 +1,8 @@
 package DB
 
 import (
-  "errors"
   "time"
+  "errors"
   "strings"
   
   "go.mongodb.org/mongo-driver/bson"
@@ -22,7 +22,7 @@ type Team struct {
 
 func TeamNameByID(teamID TID) (string, error) {
   var result Team
-  if err := TeamDB.get("teamID", teamID, &result); err != nil {
+  if err := TeamDB.get(bson.M{"teamID": teamID}, &result); err != nil {
     return "", errors.New("TeamNameByID: DB.get failed\n"+err.Error())
   }
   return result.TeamName, nil
@@ -44,29 +44,9 @@ func createNewTeam(user *CreatableUser) error {
   return nil
 }
 
-func (team *Team) sync() error{
-  result, err := TeamDB.Coll.ReplaceOne(TeamDB.Context, bson.M{"teamID": team.TeamID}, team);
-  if err != nil {
-    return errors.New("Error: Team.sync error\n" + err.Error())
-  }
-  
-  if result.MatchedCount == 0 {
-    return errors.New("Error: Team.sync failed\nmongod: No document found")
-  }
-
-  return nil
-}
-
-func (team *Team) SyncTryHard(maxTries byte) error {
-  var tries byte = 0
-
-  sync:
-  if err := team.sync(); err != nil {
-    if tries > maxTries {
-      return errors.New("Team.SyncTryHard: Error in Team.Sync, Max Tries reached\n" + err.Error())
-    }
-    tries += 1;
-    goto sync
+func (team *Team) Sync(maxTries byte) error {
+  if err := TeamDB.syncTryHard(bson.M{"teamID": team.TeamID}, team, maxTries); err != nil {
+    return errors.New("Team.SyncTryHard: Error\n" + err.Error())
   }
 
   return nil
@@ -82,7 +62,7 @@ func (team *Team) GetHint(question *Question, maxTries byte) (string, error) {
   team.Hints = append(team.Hints, question.ID)
   team.Points -= question.HintPoints
 
-  if err := team.SyncTryHard(maxTries); err != nil {
+  if err := team.Sync(maxTries); err != nil {
     return "", errors.New(("Team.GetHint: sync error\n ") + err.Error())
   }
 
@@ -103,7 +83,7 @@ func (team *Team) CheckAnswer(question *Question, Answer string, maxtries byte) 
   team.Points += question.Points
   team.Solved[question.ID] = time.Now().UnixMilli()
 
-  if err := team.SyncTryHard(maxtries); err != nil {
+  if err := team.Sync(maxtries); err != nil {
     return true, errors.New(("Team.CheckAnswer: sync error\n ") + err.Error())
   }
 

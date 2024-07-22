@@ -1,8 +1,8 @@
 package DB
 
 import (
-  "crypto/rand"
   "errors"
+  "crypto/rand"
 
   "go.mongodb.org/mongo-driver/bson"
 )
@@ -43,7 +43,7 @@ func genSessionID() (SessID, error) {
   if err != nil {
     return nil, err
   }
-  exists, err := UserDB.exists("sessionID", bytes)
+  exists, err := UserDB.exists(bson.M{"sessionID": bytes})
   if exists {
     if times > 1024 {
       return nil, errors.New("genSessionID: Lucky Error")
@@ -68,7 +68,7 @@ func genTeamID() (TID, error) {
   if err != nil {
     return nil, err
   }
-  exists, err := UserDB.exists("teamID", bytes)
+  exists, err := UserDB.exists(bson.M{"teamID": bytes})
   if exists {
     if times > 1024*1024 {
       return nil, errors.New("genTeamID: OOPS! Good Luck!")
@@ -81,15 +81,15 @@ func genTeamID() (TID, error) {
 
 /// Function to create a user in DB
 func CreateUser(user *CreatableUser) (SessID, error) {
-  exists, err := UserDB.exists("user", user.Username)
+  exists, err := UserDB.exists(bson.M{"user": user.Username})
   if err != nil { return nil, errors.New("CreateUser: Error while username lookup\n"+ err.Error()) }
   if exists { return nil, errors.New("CreateUser: User already exists") }
 
-  exists, err = UserDB.exists("mail", user.Email)
+  exists, err = UserDB.exists(bson.M{"mail": user.Email})
   if err != nil { return nil, errors.New("CreateUser: Error while email lookup\n"+ err.Error()) }
   if exists { return nil, errors.New("CreateUser: Email cannot be reused") }
 
-  exists, err = UserDB.exists("discordID", user.DiscordID)
+  exists, err = UserDB.exists(bson.M{"discordID": user.DiscordID})
   if err != nil { return nil, errors.New("CreateUser: Error while discordID lookup\n"+ err.Error()) }
   if exists { return nil, errors.New("CreateUser: Discord ID cannot be reused") }
 
@@ -159,6 +159,6 @@ func UserAuthenticate(username, password string) (*User, error) {
 /// Get Uset object from session id
 func UserFromSessionID(SessionID SessID) (*User, error) {
   var user User
-  return &user, UserDB.get("sessionID", SessionID, &user)
+  return &user, UserDB.get(bson.M{"sessionID": SessionID}, &user)
 }
 

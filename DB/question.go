@@ -2,6 +2,8 @@ package DB
 
 import (
   "errors"
+
+  "go.mongodb.org/mongo-driver/bson"
 )
 
 type Question struct {
@@ -16,7 +18,7 @@ type Question struct {
 
 func questionFromID(ID int16) (*Question, error) {
   var question Question
-  err := QuestionDB.get("questionID", ID, &question)
+  err := QuestionDB.get(bson.M{"questionID": ID}, &question)
   if err != nil {
     return nil, errors.New("QuestionFromID: DB.get error\n" + err.Error())
   }
@@ -40,11 +42,11 @@ func GetQuestionFromIDTryHard(ID int16, maxTries byte) (*Question, error) {
 }
 
 func postQuestion(ques *Question) error {
-  exists, err := QuestionDB.exists("question", ques.Question)
+  exists, err := QuestionDB.exists(bson.M{"question": ques.Question})
   if exists {
     return errors.New("postQuestion: Question already exists")
   }
-  if err!=nil{
+  if err != nil{
     return errors.New("postQuestion: Error in DB.exists\n" + err.Error())
   }
   _, err = QuestionDB.Coll.InsertOne(QuestionDB.Context, ques)
