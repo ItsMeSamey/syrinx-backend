@@ -49,6 +49,11 @@ func LobbyIDFromUserSessionID(SessionID DB.SessID) (DB.ObjID, error) {
 
   if exists {
     // A partially filled lobby found
+    err = lobby.PopulateTeams()
+    if err != nil {
+      return nil, errors.New("LobbyIDFromUserSessionID: Lobby.PopulateTeams error\n" + err.Error())
+    }
+
     lobby.Merge(template)
     err = lobby.Sync(5)
     if err != nil {
