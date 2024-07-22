@@ -2,7 +2,6 @@ package DB
 
 import (
   "errors"
-  "strings"
 )
 
 type Question struct {
@@ -15,7 +14,7 @@ type Question struct {
   Level      int    `bson:"level"`
 }
 
-func QuestionFromID(ID int16) (*Question, error) {
+func questionFromID(ID int16) (*Question, error) {
   var question Question
   err := QuestionDB.get("questionID", ID, &question)
   if err != nil {
@@ -28,7 +27,7 @@ func GetQuestionFromIDTryHard(ID int16, maxTries byte) (*Question, error) {
   var tries byte = 0
 
   getQuestion:
-  question, err := QuestionFromID(ID)
+  question, err := questionFromID(ID)
   if err != nil {
     if tries > maxTries {
       return nil, errors.New("GetQuestionFromIDTryHard: Error in DB.exists, Max Tries reached\n" + err.Error())
@@ -53,28 +52,5 @@ func postQuestion(ques *Question) error {
     return errors.New("postQuestion: Error occurred while adding question to database\n" + err.Error())
   }
   return nil
-}
-
-//check ans = ques id ,userid, answer 
-func CheckAnswerTryHard(ID int16, Answer string, maxTries byte) (int, error) {
-  question, err := GetQuestionFromIDTryHard(ID, maxTries)
-  if err != nil {
-    return 0, errors.New("CheckAnswerTryHard: Error while getting Question\n" + err.Error())
-  }
-
-  if strings.EqualFold(question.Answer, Answer) {
-    return question.HintPoints, nil
-  }
-  
-  return 0, nil
-}
-
-func GetHintTryHard(ID int16, maxTries byte) (string, int, error) {
-  question, err := GetQuestionFromIDTryHard(ID, maxTries)
-  if err != nil {
-    return  "", 0, errors.New("GetHintTryHard: Error while getting Question\n" + err.Error())
-  }
-
-  return question.Hint, question.HintPoints, nil
 }
 

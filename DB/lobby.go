@@ -19,7 +19,7 @@ type Player struct {
 type Lobby struct {
   ID          ObjID   `bson:"_id,omitempty"`
   Players    []Player `bson:"players"`
-  Teams      []Team   `bson:"teams"`
+  Teams      []Team   `bson:"-"`
   IsComplete bool     `bson:"isComplete"`
 }
 
@@ -46,7 +46,7 @@ func LobbyFromUserSessionID(SessionID SessID) (*Lobby, error) {
   err := result.Err()
 
   if err == mongo.ErrNoDocuments{
-    // User are in no lobby, create a new one
+    // User are in no lobby, create a new one or add to existing
     return createLobby(SessionID)
   } else if err != nil {
     return nil, errors.New("LobbyFromUserSessionID: DB.get error\n" + err.Error())
@@ -88,8 +88,8 @@ func createLobby(SessionID SessID) (*Lobby, error) {
   result := LobbyDB.Coll.FindOne(LobbyDB.Context, bson.M{"isComplete": false})
   err = result.Err()
 
-  /// Create a brand new lobby
   if err == mongo.ErrNoDocuments {
+    /// Create a brand new lobby
     lobby := Lobby{
       ID: nil,
       Players: players,
@@ -129,7 +129,7 @@ func createLobby(SessionID SessID) (*Lobby, error) {
 
   _, err = LobbyDB.Coll.ReplaceOne(LobbyDB.Context, bson.M{"_id": lobby.ID}, lobby)
   if err != nil {
-    return nil, errors.New("\n" + err.Error())
+    return nil, errors.New("createLobby: Replace One error\n" + err.Error())
   }
 
   return &lobby, nil

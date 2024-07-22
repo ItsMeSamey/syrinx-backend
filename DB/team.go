@@ -3,6 +3,7 @@ package DB
 import (
   "errors"
   "time"
+  "strings"
   
   "go.mongodb.org/mongo-driver/bson"
 )
@@ -15,7 +16,7 @@ type Team struct {
   // Question id and time in unix milliseconds
   Solved   map[int16]int64 `bson:"solved"`
   // Question id and whether hint is used
-  // Hints     map[int16]bool `bson:"hints"`
+  Hints     []int16 `bson:"hints"`
   Level    int            `bson:"level"`
 }
 
@@ -62,7 +63,7 @@ func (team *Team) SyncTryHard(maxTries byte) error {
   sync:
   if err := team.sync(); err != nil {
     if tries > maxTries {
-      return errors.New("syncTryHard: Error in Team.Sync, Max Tries reached\n" + err.Error())
+      return errors.New("Team.SyncTryHard: Error in Team.Sync, Max Tries reached\n" + err.Error())
     }
     tries += 1;
     goto sync
@@ -72,35 +73,40 @@ func (team *Team) SyncTryHard(maxTries byte) error {
 }
 
 /// Gives back the hint string
-func (team *Team) GetHint(QID int16, maxTries byte) (string, error) {
-  hint, points, err := GetHintTryHard(QID, maxTries)
-  if err != nil {
-    return "", errors.New("Error: Team.getHint\n" + err.Error())
+func (team *Team) GetHint(question *Question, maxTries byte) (string, error) {
+  for _, hint := range team.Hints {
+    if hint == question.ID {
+      return question.Hint, nil
+    }
+  }
+  team.Hints = append(team.Hints, question.ID)
+  team.Points -= question.HintPoints
+
+  if err := team.SyncTryHard(maxTries); err != nil {
+    return "", errors.New(("Team.GetHint: sync error\n ") + err.Error())
   }
 
-  // val, ok := team.Hints[QID]
-  // if (!ok || val == false) {
-  //   team.Hints[QID] = true
-  //   team.Points -= points
-  // }
-
-  _ = points
-  return hint, nil
+  return question.Hint, nil
 }
 
 /// Returns success(bool), error
-func (team *Team) CheckAnswer(QID int16, Answer string, maxTries byte) (bool, error) {
-  points, err := CheckAnswerTryHard(QID, Answer, maxTries)
-  if err != nil {
-    return false, errors.New("Error: Team.checkAnswer\n" + err.Error())
+func (team *Team) CheckAnswer(question *Question, Answer string, maxtries byte) (bool, error) {
+
+  if _, ok := team.Solved[question.ID]; ok {
+    return true, errors.New("Team.CheckAnswer: already solved")
   }
-  
-  if (points == 0) {
+
+  if !strings.EqualFold(question.Answer, Answer) {
     return false, nil
   }
 
-  team.Points += points
-  team.Solved[QID] = time.Now().UnixMilli()
+  team.Points += question.Points
+  team.Solved[question.ID] = time.Now().UnixMilli()
+
+  if err := team.SyncTryHard(maxtries); err != nil {
+    return true, errors.New(("Team.CheckAnswer: sync error\n ") + err.Error())
+  }
+
   return true, nil
 }
 

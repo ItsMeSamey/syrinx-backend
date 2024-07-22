@@ -9,6 +9,8 @@ import (
   "github.com/gorilla/websocket"
 )
 
+const MAX_TRIES = 5
+
 func (lobby *Lobby) getTeam(myIndex byte) (*DB.Team, error) {
   myTeam := lobby.Lobby.Players[myIndex].TeamID
   for i := range lobby.Lobby.Teams {
@@ -34,54 +36,55 @@ func (lobby *Lobby) handleTextMessage(myIndex byte, message []byte, conn *websoc
     return errors.New(("handleTextMessage: error getting team\n") + err.Error())
   }
 
-  if _question.Hint == "true" {
-    hint, points, err := DB.GetHintTryHard(_question.ID, 5)
-    if err != nil {
-      return errors.New(("handleTextMessage: get hint\n ") + err.Error())
-    }
-    
-    team.Points -= points
-
-    err = team.SyncTryHard(5)
-    if err != nil {
-      return errors.New(("handleTextMessage: sync error\n ") + err.Error())
-    }
-
-    retval, err := json.Marshal(struct{Hint string}{hint})
-    if err != nil {
-      return errors.New(("handleTextMessage: json Marshal error\n ") + err.Error())
-    }
-
-    return conn.WriteMessage(websocket.TextMessage, retval)
-  }
-
-  if _question.Answer != "" {
-    correct, err := team.CheckAnswer(_question.ID, _question.Answer, 5)
-    if err != nil {
-      return errors.New(("handleTextMessage: Check Answer error\n ") + err.Error())
-    }
-
-    if !correct {
-      return conn.WriteMessage(websocket.TextMessage, []byte("{\"correct\":false}"))
-    }
-
-    err = team.SyncTryHard(5)
-    if err != nil {
-      return errors.New(("handleTextMessage: sync error\n ") + err.Error())
-    }
-
-    return conn.WriteMessage(websocket.TextMessage, []byte("{\"correct\":true}"))
-  }
-
-  question, err := DB.QuestionFromID(_question.ID)
+  question, err := DB.GetQuestionFromIDTryHard(_question.ID, MAX_TRIES)
   if err != nil {
-    return errors.New(("handleTextMessage: error getting question\n ") + err.Error())
+    return errors.New(("getQuestion: could not get question from ID\n ") + err.Error())
   }
 
   if question.Level != team.Level {
-    return errors.New("handleTextMessage: Level mismatch")
+    return errors.New("getQuestion: Level mismatch")
+  }
+
+  var retval []byte
+  if _question.Hint == "true" {
+    retval, err = getHint(question, team, MAX_TRIES)
+  } else if _question.Answer != "" {
+    retval, err = checkAnswer(question, team, _question.Answer, MAX_TRIES)
+  } else {
+    retval, err = getQuestion(question)
+  }
+
+  return conn.WriteMessage(websocket.TextMessage, retval)
+}
+
+func getHint(question *DB.Question, team *DB.Team, maxTries byte) ([]byte, error) {
+  hint, err := team.GetHint(question, maxTries)
+  if err != nil {
+    return nil, errors.New(("getHint: get hint\n ") + err.Error())
   }
   
+  retval, err := json.Marshal(struct{Hint string}{hint})
+  if err != nil {
+    return nil, errors.New(("getHint: json Marshal error\n ") + err.Error())
+  }
+
+  return retval, nil
+}
+
+func checkAnswer(question *DB.Question, team *DB.Team, Answer string, maxTries byte) ([]byte, error) {
+  ok, err := team.CheckAnswer(question, Answer, maxTries)
+  if err != nil {
+    return nil, errors.New(("checkAnswer error\n ") + err.Error())
+  }
+
+  if ok {
+    return []byte("{\"correct\":true}"), nil
+  } else {
+    return []byte("{\"correct\":false}"), nil
+  }
+}
+
+func getQuestion(question *DB.Question) ([]byte, error) {
   retval, err := json.Marshal(struct{
     Question   string
     Level      int
@@ -94,12 +97,11 @@ func (lobby *Lobby) handleTextMessage(myIndex byte, message []byte, conn *websoc
     question.HintPoints,
   })
   if err != nil {
-    return errors.New(("handleTextMessage: json Marshal error\n ") + err.Error())
+    return nil, errors.New("getQuestion: json Marshal error\n " + err.Error())
   }
 
-  return conn.WriteMessage(websocket.TextMessage, retval)
+  return retval, nil
 }
-
 
 /// Handles binary message to websocket
 func (lobby *Lobby) handleBinaryMessage(myIndex byte, message []byte) error {
