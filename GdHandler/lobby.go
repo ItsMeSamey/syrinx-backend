@@ -76,7 +76,7 @@ func LobbyIDFromUserSessionID(SessionID DB.SessID) (DB.ObjID, error) {
     if !ok {
       go watchdog(insertable)
     }
-    return lobby.ID, nil
+    return template.ID, nil
   }
 
   // Creating a new lobby
