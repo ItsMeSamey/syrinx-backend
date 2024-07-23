@@ -69,7 +69,7 @@ func leaderboardHandler(c *gin.Context) {
   c.JSON(http.StatusOK, teams)
 }
 
-func handleLogs(c *gin.Context) {
+func logsHandler(c *gin.Context) {
   go func(){ file.Sync() }()
 
   width, err := strconv.Atoi(c.Param("width"))

@@ -25,7 +25,7 @@ type CreatableUser struct {
   Email     string  `bson:"mail"`
   Password  string  `bson:"pass"`
   TeamID    TID     `bson:"teamID"`
-  TeamName  *string `bson:"teamName"`
+  TeamName  string `bson:"teamName"`
   DiscordID string  `bson:"discordID"`
 }
 
@@ -94,7 +94,7 @@ func CreateUser(user *CreatableUser) (SessID, error) {
   if exists { return nil, errors.New("CreateUser: Discord ID cannot be reused") }
 
   if user.TeamID == nil {
-    if user.TeamName == nil || *(user.TeamName) == "" {
+    if user.TeamName == "" {
       return nil, errors.New("CreateUser: Team name needs to be specified")
     }
     tid, err := genTeamID()
@@ -118,11 +118,11 @@ func CreateUser(user *CreatableUser) (SessID, error) {
       return nil, errors.New("CreateUser: Team already at max capacity")
     }
 
-    name, err := TeamNameByID(user.TeamID)
+    team, err := TeamByTeamID(user.TeamID)
     if err != nil {
       return nil, errors.New("CreateUser: could not get name of the team\n"+ err.Error())
     }
-    user.TeamName = &name;
+    user.TeamName = team.TeamName
   }
 
   SessionID, err := genSessionID()

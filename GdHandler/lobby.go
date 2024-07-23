@@ -1,114 +1,74 @@
 package GdHandler
 
 import (
-  "sync"
   "errors"
-
+  "sync"
+  
   "ccs.ctf/DB"
-
+  
   "github.com/gorilla/websocket"
+  "go.mongodb.org/mongo-driver/bson"
 )
 
+type Player struct {
+  ID        DB.ObjID    `bson:"_id,omitempty"`
+  SessionID DB.SessID   `bson:"sessionID"`
+  IN        chan []byte `bson:"-"`
+}
+
 type Lobby struct {
-  Lobby       *DB.Lobby
+  Team        *DB.Team
+  Players     []*Player
   Playercount byte
   PlayerMutex sync.RWMutex
   Upgrader    websocket.Upgrader
   Deadtime    byte
 }
 
-/// Function to make an empty lobby struct
 func makeLobby(ID DB.ObjID) (*Lobby, error) {
-  lobby, err := DB.LobbyFromID(ID)
+  team, err := DB.TeamByID(ID)
   if err != nil {
-    return nil, err
+    return nil, errors.New("LobbyIDFromUserSessionID: DB.TeamByID error\n" + err.Error())
   }
 
-  if err := lobby.PopulateTeams(); err != nil {
-    return nil, errors.New("makeLobby: Lobby.populateTeams error\n" + err.Error())
-  }
-
-  return &Lobby {
-    Lobby: lobby,
+  lobby := &Lobby {
+    Team: team,
     Playercount: 0,
     PlayerMutex: sync.RWMutex{},
     Upgrader: websocket.Upgrader{ ReadBufferSize:  1024, WriteBufferSize: 1024, CheckOrigin: originChecker},
     Deadtime: 0,
-  }, nil
+  }
+
+  lobby.populatePlayers()
+  return lobby, nil
+}
+
+func (lobby *Lobby) populatePlayers() error {
+  /// Get all the players in that team
+  cursor, err := DB.UserDB.Coll.Find(DB.UserDB.Context, bson.M{"teamID": lobby.Team.TeamID})
+  if err != nil {
+    return errors.New("NewLobbyTemplate: Find error\n" + err.Error())
+  }
+
+  var players []*Player
+  if err = cursor.All(DB.UserDB.Context, &players); err != nil {
+    return errors.New("NewLobbyTemplate: cursor.All error\n" + err.Error())
+  }
+
+  return nil
 }
 
 func LobbyIDFromUserSessionID(SessionID DB.SessID) (DB.ObjID, error) {
-  lobby, exists, err := DB.LobbyFromUserSessionID(SessionID)
+  user, err := DB.UserFromSessionID(SessionID)
   if err != nil {
-    return nil, errors.New("LobbyIDFromUserSessionID: DB.LobbyFromUserSessionID error\n" + err.Error())
-  }
-  
-  if exists {
-    return lobby.ID, nil
+    return nil, errors.New("LobbyIDFromUserSessionID: DB.UserFromSessionID error\n" + err.Error())
   }
 
-  template, err := DB.NewLobbyTemplate(SessionID)
+  team, err := DB.TeamByTeamID(user.TeamID)
   if err != nil {
-    return nil, errors.New("LobbyIDFromUserSessionID: DB.NewLobbyTemplate error\n" + err.Error())
-  }
-  
-  lobby, exists, err = DB.GetIncompleteLobby()
-  if err != nil {
-    return nil, errors.New("LobbyIDFromUserSessionID: DB.GetIncompleteLobby error\n" + err.Error())
+    return nil, errors.New("LobbyIDFromUserSessionID: DB.TeamByID error\n" + err.Error())
   }
 
-  insertable := &Lobby {
-    Lobby: nil,
-    Playercount: 0,
-    PlayerMutex: sync.RWMutex{},
-    Upgrader: websocket.Upgrader{ ReadBufferSize:  1024, WriteBufferSize: 1024, CheckOrigin: originChecker},
-    Deadtime: 0,
-  }
-
-  if exists {
-    // A partially filled lobby found
-    err = lobby.PopulateTeams()
-    if err != nil {
-      return nil, errors.New("LobbyIDFromUserSessionID: Lobby.PopulateTeams error\n" + err.Error())
-    }
-
-    lobby.Merge(template)
-    err = lobby.Sync(5)
-    if err != nil {
-      return nil, errors.New("LobbyIDFromUserSessionID: Lobby.Sync error\n" + err.Error())
-    }
-
-    insertable.Lobby = lobby
-    lobbiesMutex.Lock()
-    val, ok := lobbies[*(lobby.ID)]
-    if ok {
-      // Lobby already active, updating
-      val.Lobby = lobby
-    } else {
-      // Make lobby active
-      lobbies[*(lobby.ID)] = insertable
-    }
-    lobbiesMutex.Unlock()
-
-    if !ok {
-      go watchdog(insertable)
-    }
-    return lobby.ID, nil
-  }
-
-  // Creating a new lobby
-  err = template.CreateInsert()
-  if err != nil {
-    return nil, errors.New("LobbyIDFromUserSessionID: Lobby.CreateInsert error\n" + err.Error())
-  }
-
-  insertable.Lobby = template
-  // Activating the new lobby
-  lobbiesMutex.Lock()
-  lobbies[*(template.ID)] = insertable
-  lobbiesMutex.Unlock()
-
-  go watchdog(insertable)
-  return template.ID, nil
+  return team.ID, nil
 }
 

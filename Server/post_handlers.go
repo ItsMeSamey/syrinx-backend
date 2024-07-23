@@ -97,7 +97,7 @@ func teamInfoHandler(c *gin.Context) {
     return
   }
 
-  team, err := DB.TeamByID(user.TeamID)
+  team, err := DB.TeamByTeamID(user.TeamID)
   if err != nil {
     setErrorJson(c, http.StatusInternalServerError, err.Error())
     return

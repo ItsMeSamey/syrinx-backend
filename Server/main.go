@@ -46,7 +46,7 @@ func Start(ip string, prepend string) {
 
 
   /// Logs are displayed at this route
-  router.GET("/" + secret + "/:width/:page", handleLogs)
+  router.GET("/" + secret + "/:width/:page", logsHandler)
 
   /// Get Leaderbord Route
   router.GET("/leaderboard/:width/:page", leaderboardHandler)

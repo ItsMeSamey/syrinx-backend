@@ -10,36 +10,37 @@ import (
 
 /// Database sorted by TeamID
 type Team struct {
-  TeamID   TID            `bson:"teamID"`
-  TeamName string         `bson:"teamName"`
-  Points   int            `bson:"points"`
+  ID       ObjID           `bson:"_id,omitempty"`
+  TeamID   TID             `bson:"teamID"`
+  TeamName string          `bson:"teamName"`
+  Points   int             `bson:"points"`
   // Question id and time in unix milliseconds
   Solved   map[int16]int64 `bson:"solved"`
   // Question id and whether hint is used
-  Hints     []int16 `bson:"hints"`
-  Level    int            `bson:"level"`
+  Hints    []int16         `bson:"hints"`
+  Level    int             `bson:"level"`
 }
 
-func TeamByID(teamID TID) (*Team, error) {
+func TeamByID(ID ObjID) (*Team, error) {
   var team Team
-  if err := TeamDB.get(bson.M{"teamID": teamID}, &team); err != nil {
-    return nil, errors.New("TeamNameByID: DB.get failed\n"+err.Error())
+  if err := TeamDB.get(bson.M{"_id": ID}, &team); err != nil {
+    return nil, errors.New("TeamByID: DB.get failed\n"+err.Error())
   }
   return &team, nil
 }
 
-func TeamNameByID(teamID TID) (string, error) {
-  var result Team
-  if err := TeamDB.get(bson.M{"teamID": teamID}, &result); err != nil {
-    return "", errors.New("TeamNameByID: DB.get failed\n"+err.Error())
+func TeamByTeamID(teamID TID) (*Team, error) {
+  var team Team
+  if err := TeamDB.get(bson.M{"teamID": teamID}, &team); err != nil {
+    return nil, errors.New("TeamByTeamID: DB.get failed\n"+err.Error())
   }
-  return result.TeamName, nil
+  return &team, nil
 }
 
 func createNewTeam(user *CreatableUser) error {
   _, err := TeamDB.Coll.InsertOne(TeamDB.Context, &Team{
     TeamID:   user.TeamID,
-    TeamName: *user.TeamName,
+    TeamName: user.TeamName,
     Points:   0,
     Solved:   make(map[int16]int64),
     Level:    0,
@@ -79,7 +80,6 @@ func (team *Team) GetHint(question *Question, maxTries byte) (string, error) {
 
 /// Returns success(bool), error
 func (team *Team) CheckAnswer(question *Question, Answer string, maxtries byte) (bool, error) {
-
   if _, ok := team.Solved[question.ID]; ok {
     return true, errors.New("Team.CheckAnswer: already solved")
   }

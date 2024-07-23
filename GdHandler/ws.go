@@ -21,7 +21,7 @@ func (lobby *Lobby) getUserAuth(messageType int, message []byte) (byte, error) {
   }
 
   // Validate token
-  for i, player := range lobby.Lobby.Players {
+  for i, player := range lobby.Players {
     if reflect.DeepEqual(*player.SessionID, [64]byte(message)) {
       return byte(i), nil
     }
@@ -66,18 +66,18 @@ func (lobby *Lobby) wsHandler(c *gin.Context) error {
   // Create a player receiving channel
   channel := make(chan []byte, 128)
   lobby.PlayerMutex.Lock()
-  if lobby.Lobby.Players[myIndex].IN != nil {
-    close(lobby.Lobby.Players[myIndex].IN)
+  if lobby.Players[myIndex].IN != nil {
+    close(lobby.Players[myIndex].IN)
   }
-  lobby.Lobby.Players[myIndex].IN = channel
+  lobby.Players[myIndex].IN = channel
   lobby.PlayerMutex.Unlock()
 
   // Delete the player receiving channel in the end
   defer func () {
     lobby.PlayerMutex.Lock()
-    if lobby.Lobby.Players[myIndex].IN != nil {
+    if lobby.Players[myIndex].IN != nil {
       close(channel)
-      lobby.Lobby.Players[myIndex].IN = nil
+      lobby.Players[myIndex].IN = nil
     }
     lobby.PlayerMutex.Unlock()
   }()

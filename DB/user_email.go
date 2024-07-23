@@ -29,7 +29,7 @@ func internalSendConfirmationEmail(user *CreatableUser) error {
   }{
     JoinedMember: user.Username,
     Email:        user.Email,
-    TeamName:     *user.TeamName,
+    TeamName:     user.TeamName,
     TeamID:       hex.EncodeToString(user.TeamID[:]),
   })
   if err != nil {

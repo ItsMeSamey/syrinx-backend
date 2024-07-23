@@ -53,7 +53,7 @@ func ConnectToLobby(ID DB.ObjID, c *gin.Context) error {
 /// and probably should be async
 func watchdog(lobby *Lobby) {
   lobby.Deadtime = 0
-  sleepTime := (30 + (lobby.Lobby.ID[0]&31))
+  sleepTime := (30 + (lobby.Team.ID[0]&31))
 begin:
   time.Sleep(time.Duration(sleepTime) * time.Second)
   lobby.PlayerMutex.RLock()
@@ -67,7 +67,7 @@ begin:
     lobby.PlayerMutex.Lock()
     if lobby.Playercount == 0 {
       // Delete the lobby
-      delete(lobbies, *lobby.Lobby.ID);
+      delete(lobbies, *lobby.Team.ID);
       lobby.PlayerMutex.Unlock()
       lobbiesMutex.Unlock()
       return
