@@ -55,6 +55,8 @@ func (lobby *Lobby) populatePlayers() error {
     return errors.New("NewLobbyTemplate: cursor.All error\n" + err.Error())
   }
 
+  lobby.Players = players
+
   return nil
 }
 
@@ -64,11 +66,11 @@ func LobbyIDFromUserSessionID(SessionID DB.SessID) (DB.TID, error) {
     return nil, errors.New("LobbyIDFromUserSessionID: DB.UserFromSessionID error\n" + err.Error())
   }
 
-  team, err := DB.TeamByTeamID(user.TeamID)
+  lobby, err := getAddedLobby(user.TeamID, func(_ *Lobby) error {return nil})
   if err != nil {
-    return nil, errors.New("LobbyIDFromUserSessionID: DB.TeamByID error\n" + err.Error())
+    return nil, errors.New("LobbyIDFromUserSessionID: getAddedLobby error\n" + err.Error())
   }
 
-  return team.TeamID, nil
+  return lobby.Team.TeamID, nil
 }
 

@@ -46,7 +46,7 @@ func authanticationHandler(c *gin.Context) {
     return
   }
 
-  setSuccessJson(c, gin.H{"SessionID": usr.SessionID})
+  setSuccessJson(c, gin.H{"SessionID": usr.SessionID, "TeamID": user.TeamID})
 }
 
 /// Function to call when user asks for their lobby
@@ -79,7 +79,10 @@ func teamInfoHandler(c *gin.Context) {
     DiscordID string `bson:"discordID"`
   }
 
-  var userID struct { SessionID DB.SessID }
+  var userID struct {
+    TeamID    DB.TID
+    SessionID DB.SessID
+  }
 
   if err := bindJson(c, &userID); err != nil {
     setErrorJson(c, http.StatusBadRequest, err.Error())
@@ -90,6 +93,11 @@ func teamInfoHandler(c *gin.Context) {
     setErrorJson(c, http.StatusBadRequest, "SessionID is required")
     return
   }
+
+  // if userID.TeamID != nil {
+  //   setErrorJson(c, http.StatusBadRequest, "SessionID is required")
+  //   return
+  // }
 
   user, err := DB.UserFromSessionID(userID.SessionID)
   if err != nil {

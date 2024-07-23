@@ -11,7 +11,7 @@ import (
 
 //! WARNING: DO NOT MESS WITH THIS UNLESS YOU KNOW WHAT YOU ARE DOING
 /// Connect to a lobby if one exists or add it to the lobby map
-func ConnectToLobby(ID DB.TID, c *gin.Context) error {
+func getAddedLobby(ID DB.TID, execFunc func(*Lobby)error) (*Lobby, error) {
   start:
   lobbiesMutex.RLock()
   val, ok := lobbies[*ID]
@@ -21,7 +21,7 @@ func ConnectToLobby(ID DB.TID, c *gin.Context) error {
     if val.Deadtime >= 10 { goto start }
     val.Playercount += 1
     val.PlayerMutex.Unlock()
-    return val.wsHandler(c)
+    return val, execFunc(val)
   } else {
     // A user will be stranded in a isolated lobby if thisis ignored
     lobbiesMutex.Lock()
@@ -35,16 +35,21 @@ func ConnectToLobby(ID DB.TID, c *gin.Context) error {
       val, err = makeLobby(ID)
       if err != nil {
         lobbiesMutex.Unlock()
-        return errors.New("ConnectToLobby: error while lobby creation\n" + err.Error())
+        return nil, errors.New("ConnectToLobby: error while lobby creation\n" + err.Error())
       }
       lobbies[*ID] = val
+      val.Playercount += 1
       lobbiesMutex.Unlock()
 
-      val.Playercount += 1
       go watchdog(val)
-      return val.wsHandler(c)
+      return val, execFunc(val)
     }
   }
+}
+
+func ConnectToLobby(ID DB.TID, c *gin.Context) error {
+  _, err := getAddedLobby(ID, func(lobby *Lobby) error { return lobby.wsHandler(c)})
+  return err
 }
 
 //! WARNING: DO NOT MESS WITH THIS UNLESS YOU KNOW WHAT YOU ARE DOING
