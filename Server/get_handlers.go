@@ -49,7 +49,7 @@ func leaderboardHandler(c *gin.Context) {
   skip := limit*int64(page)
   cursor, err :=  DB.TeamDB.Coll.Find(DB.TeamDB.Context, bson.M{}, &options.FindOptions{
     BatchSize: &batchSize,
-    Sort: bson.M{"points": 1},
+    Sort: bson.M{"points": -1},
     Limit: &limit,
     Skip: &skip,
   })
