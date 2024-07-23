@@ -11,11 +11,15 @@ import (
 )
 
 /// This will probably handle questioning/answering
-func (lobby *Lobby) handleTextMessage(myIndex byte, message []byte, conn *websocket.Conn) error {
+func (lobby *Lobby) handleTextMessage(message []byte, conn *websocket.Conn) error {
   log.Println("Got String: ", string(message))
   _question := DB.Question{}
   if err := json.Unmarshal(message, &_question); err != nil {
     return err
+  }
+
+  if lobby.Team.IsSolved(_question.ID) {
+    return errors.New("Solved")
   }
 
   question, err := DB.GetQuestionFromIDTryHard(_question.ID, MAX_TRIES)
@@ -36,6 +40,9 @@ func (lobby *Lobby) handleTextMessage(myIndex byte, message []byte, conn *websoc
     retval, err = getQuestion(question)
   }
 
+  if err != nil {
+    return err
+  }
   return conn.WriteMessage(websocket.TextMessage, retval)
 }
 

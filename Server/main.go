@@ -49,7 +49,7 @@ func Start(ip string, prepend string) {
   router.GET("/" + secret + "/:width/:page", logsHandler)
 
   /// Get Leaderbord Route
-  router.GET("/leaderboard/:width/:page", leaderboardHandler)
+  router.GET("/leaderboard", leaderboardHandler)
 
   /// The signup route
   router.POST("/signup", signupHandler)

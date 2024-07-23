@@ -79,10 +79,7 @@ func teamInfoHandler(c *gin.Context) {
     DiscordID string `bson:"discordID"`
   }
 
-  var userID struct {
-    TeamID    DB.TID
-    SessionID DB.SessID
-  }
+  var userID struct {SessionID DB.SessID}
 
   if err := bindJson(c, &userID); err != nil {
     setErrorJson(c, http.StatusBadRequest, err.Error())
@@ -94,18 +91,14 @@ func teamInfoHandler(c *gin.Context) {
     return
   }
 
-  // if userID.TeamID != nil {
-  //   setErrorJson(c, http.StatusBadRequest, "SessionID is required")
-  //   return
-  // }
-
   user, err := DB.UserFromSessionID(userID.SessionID)
   if err != nil {
     setErrorJson(c, http.StatusBadRequest, err.Error())
     return
   }
 
-  team, err := DB.TeamByTeamID(user.TeamID)
+  var team *DB.Team
+  team, err = DB.TeamByTeamID(user.TeamID)
   if err != nil {
     setErrorJson(c, http.StatusInternalServerError, err.Error())
     return

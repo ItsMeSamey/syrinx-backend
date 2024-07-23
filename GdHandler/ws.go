@@ -1,11 +1,12 @@
 package GdHandler
 
 import (
-  "log"
+  "encoding/json"
   "errors"
-  "strconv"
+  "log"
   "reflect"
-
+  "strconv"
+  
   "github.com/gin-gonic/gin"
   "github.com/gorilla/websocket"
 )
@@ -101,16 +102,24 @@ func (lobby *Lobby) wsHandler(c *gin.Context) error {
 
     // Async can cause UB as values can be modified while another goroutine is in flight
     if messageType == websocket.TextMessage {
-      err = lobby.handleTextMessage(myIndex, message, conn)
+      if err = lobby.handleTextMessage(message, conn); err != nil {
+        log.Println("wsHandler: error:", err)
+        val, err := json.Marshal(struct {Error string}{err.Error()})
+        if err != nil {
+          log.Println("Text message marshal error: ", err)
+          continue
+        }
+        _ = conn.WriteMessage(websocket.BinaryMessage, val)
+        continue
+      }
     } else if messageType == websocket.BinaryMessage{
-      err = lobby.handleBinaryMessage(myIndex, message)
+      if err = lobby.handleBinaryMessage(myIndex, message); err != nil {
+        log.Println("wsHandler: error:", err)
+        _ = conn.WriteMessage(websocket.BinaryMessage, append([]byte{0xff}, []byte(err.Error())...))
+        continue
+      }
     } else {
       err = errors.New("wsHandler: Invalid messageType: " + strconv.Itoa(messageType))
-    }
-    if err != nil {
-      log.Println("wsHandler: error:", err)
-      _ = conn.WriteMessage(websocket.BinaryMessage, append([]byte{0xff}, []byte(err.Error())...))
-      continue
     }
   }
   return nil

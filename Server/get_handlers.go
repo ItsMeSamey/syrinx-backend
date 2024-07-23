@@ -35,23 +35,12 @@ func lobbyHandler(c *gin.Context) {
 }
 
 func leaderboardHandler(c *gin.Context) {
-  width, err := strconv.Atoi(c.Param("width"))
-  if err != nil {
-    setErrorJson(c, http.StatusBadRequest, "width parsing error\n" + err.Error())
-  }
-  page, err := strconv.Atoi(c.Param("page"))
-  if err != nil {
-    setErrorJson(c, http.StatusBadRequest, "page parsing error\n" + err.Error())
-  }
-
-  batchSize := int32(width)
-  limit := int64(width)
-  skip := limit*int64(page)
+  batchSize := int32(1024)
+  limit := int64(1024)
   cursor, err :=  DB.TeamDB.Coll.Find(DB.TeamDB.Context, bson.M{}, &options.FindOptions{
     BatchSize: &batchSize,
     Sort: bson.M{"points": -1},
     Limit: &limit,
-    Skip: &skip,
   })
   if err != nil {
     setErrorJson(c, http.StatusInternalServerError, err.Error())

@@ -13,6 +13,8 @@ var (
   lobbiesMutex sync.RWMutex = sync.RWMutex{}
 )
 
+/// origin checker for websocket connections
 func originChecker(r *http.Request) bool {
   return true
 }
+

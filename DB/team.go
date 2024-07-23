@@ -71,10 +71,9 @@ func (team *Team) GetHint(question *Question, maxTries byte) (string, error) {
 
 /// Returns success(bool), error
 func (team *Team) CheckAnswer(question *Question, Answer string, maxtries byte) (bool, error) {
-  if _, ok := team.Solved[question.ID]; ok {
+  if solved := team.IsSolved(question.ID); solved{
     return true, errors.New("Team.CheckAnswer: already solved")
   }
-
   if !strings.EqualFold(question.Answer, Answer) {
     return false, nil
   }
@@ -87,5 +86,12 @@ func (team *Team) CheckAnswer(question *Question, Answer string, maxtries byte) 
   }
 
   return true, nil
+}
+
+func (team *Team) IsSolved(ID int16) bool {
+  if _, ok := team.Solved[ID]; ok {
+    return true
+  }
+  return false
 }
 
