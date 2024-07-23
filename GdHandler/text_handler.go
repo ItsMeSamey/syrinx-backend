@@ -18,7 +18,7 @@ func (lobby *Lobby) handleTextMessage(message []byte, conn *websocket.Conn) erro
     return err
   }
 
-  if lobby.Team.IsSolved(_question.ID) {
+  if lobby.Team.IsSolved(_question.ID) == true {
     return errors.New("Solved")
   }
 
