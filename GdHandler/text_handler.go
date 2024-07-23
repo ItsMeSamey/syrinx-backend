@@ -70,12 +70,12 @@ func getQuestion(question *DB.Question) ([]byte, error) {
   retval, err := json.Marshal(struct{
     Question   string
     Level      int
-    Hint       string
+    Points     int
     HintPoints int
   }{
     question.Question,
     question.Level,
-    question.Hint,
+    question.Points,
     question.HintPoints,
   })
   if err != nil {
