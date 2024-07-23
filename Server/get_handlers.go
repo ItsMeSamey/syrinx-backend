@@ -24,12 +24,12 @@ func lobbyHandler(c *gin.Context) {
     return
   }
 
-  if len(ID) != 12 {
+  if len(ID) != 3 {
     setErrorJson(c, http.StatusInternalServerError, "lobbyHandler: LobbyID length mismatch")
     return
   }
 
-  if err := GdHandler.ConnectToLobby(DB.ObjID(ID), c); err != nil {
+  if err := GdHandler.ConnectToLobby(DB.TID(ID), c); err != nil {
     log.Println(err)
   }
 }

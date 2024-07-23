@@ -10,7 +10,6 @@ import (
 
 /// Database sorted by TeamID
 type Team struct {
-  ID       ObjID           `bson:"_id,omitempty"`
   TeamID   TID             `bson:"teamID"`
   TeamName string          `bson:"teamName"`
   Points   int             `bson:"points"`
@@ -19,14 +18,6 @@ type Team struct {
   // Question id and whether hint is used
   Hints    []int16         `bson:"hints"`
   Level    int             `bson:"level"`
-}
-
-func TeamByID(ID ObjID) (*Team, error) {
-  var team Team
-  if err := TeamDB.get(bson.M{"_id": ID}, &team); err != nil {
-    return nil, errors.New("TeamByID: DB.get failed\n"+err.Error())
-  }
-  return &team, nil
 }
 
 func TeamByTeamID(teamID TID) (*Team, error) {

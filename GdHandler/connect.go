@@ -11,7 +11,7 @@ import (
 
 //! WARNING: DO NOT MESS WITH THIS UNLESS YOU KNOW WHAT YOU ARE DOING
 /// Connect to a lobby if one exists or add it to the lobby map
-func ConnectToLobby(ID DB.ObjID, c *gin.Context) error {
+func ConnectToLobby(ID DB.TID, c *gin.Context) error {
   start:
   lobbiesMutex.RLock()
   val, ok := lobbies[*ID]
@@ -53,7 +53,7 @@ func ConnectToLobby(ID DB.ObjID, c *gin.Context) error {
 /// and probably should be async
 func watchdog(lobby *Lobby) {
   lobby.Deadtime = 0
-  sleepTime := (30 + (lobby.Team.ID[0]&31))
+  sleepTime := (30 + (lobby.Team.TeamID[0]&31))
 begin:
   time.Sleep(time.Duration(sleepTime) * time.Second)
   lobby.PlayerMutex.RLock()
@@ -67,7 +67,7 @@ begin:
     lobby.PlayerMutex.Lock()
     if lobby.Playercount == 0 {
       // Delete the lobby
-      delete(lobbies, *lobby.Team.ID);
+      delete(lobbies, *lobby.Team.TeamID);
       lobby.PlayerMutex.Unlock()
       lobbiesMutex.Unlock()
       return

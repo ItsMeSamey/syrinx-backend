@@ -25,8 +25,8 @@ type Lobby struct {
   Deadtime    byte
 }
 
-func makeLobby(ID DB.ObjID) (*Lobby, error) {
-  team, err := DB.TeamByID(ID)
+func makeLobby(ID DB.TID) (*Lobby, error) {
+  team, err := DB.TeamByTeamID(ID)
   if err != nil {
     return nil, errors.New("LobbyIDFromUserSessionID: DB.TeamByID error\n" + err.Error())
   }
@@ -58,7 +58,7 @@ func (lobby *Lobby) populatePlayers() error {
   return nil
 }
 
-func LobbyIDFromUserSessionID(SessionID DB.SessID) (DB.ObjID, error) {
+func LobbyIDFromUserSessionID(SessionID DB.SessID) (DB.TID, error) {
   user, err := DB.UserFromSessionID(SessionID)
   if err != nil {
     return nil, errors.New("LobbyIDFromUserSessionID: DB.UserFromSessionID error\n" + err.Error())
@@ -69,6 +69,6 @@ func LobbyIDFromUserSessionID(SessionID DB.SessID) (DB.ObjID, error) {
     return nil, errors.New("LobbyIDFromUserSessionID: DB.TeamByID error\n" + err.Error())
   }
 
-  return team.ID, nil
+  return team.TeamID, nil
 }
 
