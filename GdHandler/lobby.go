@@ -1,7 +1,6 @@
 package GdHandler
 
 import (
-  "log"
   "sync"
   "errors"
   "net/http"
