@@ -38,7 +38,7 @@ func getAddedLobby(ID DB.TID, execFunc func(*Lobby)error) (*Lobby, error) {
         return nil, errors.New("ConnectToLobby: error while lobby creation\n" + err.Error())
       }
       lobbies[*ID] = val
-      val.Playercount += 1
+      val.Playercount += 01
       lobbiesMutex.Unlock()
 
       go watchdog(val)
@@ -68,18 +68,8 @@ begin:
   lobby.PlayerMutex.RUnlock()
 
   if lobby.Deadtime >= 10 { // Lobby timeout 5~10 minutes
-    lobbiesMutex.Lock()
-    lobby.PlayerMutex.Lock()
-    if lobby.Playercount == 0 {
-      // Delete the lobby
-      delete(lobbies, *lobby.Team.TeamID);
-      lobby.PlayerMutex.Unlock()
-      lobbiesMutex.Unlock()
-      return
-    }
-    lobby.Deadtime = 0
-    lobby.PlayerMutex.Unlock()
-    lobbiesMutex.Unlock()
+    lobby.delete()
+    return
   }
   goto begin
 }

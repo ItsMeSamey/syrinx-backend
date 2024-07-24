@@ -12,12 +12,12 @@ import (
 
 type (
   Player struct {
-    ID        DB.ObjID    `bson:"_id,omitempty"`
-    Username  string      `bson:"user"`
-    Email     string      `bson:"mail"`
-    DiscordID string      `bson:"discordID"`
-    SessionID DB.SessID   `bson:"sessionID"`
-    IN        chan []byte `bson:"-"`
+    ID        DB.ObjID        `bson:"_id,omitempty"`
+    Username  string          `bson:"user"`
+    Email     string          `bson:"mail"`
+    DiscordID string          `bson:"discordID"`
+    SessionID DB.SessID       `bson:"sessionID"`
+    Conn      *websocket.Conn `bson:"-"`
   }
 
   Lobby struct {
@@ -34,6 +34,10 @@ func makeLobby(ID DB.TID) (*Lobby, error) {
   team, err := DB.TeamByTeamID(ID)
   if err != nil {
     return nil, errors.New("LobbyIDFromUserSessionID: DB.TeamByID error\n" + err.Error())
+  }
+
+  if !team.Exception && team.Level != LEVEL {
+    return nil, errors.New("LobbyIDFromUserSessionID: Team Level Mismatch")
   }
 
   lobby := &Lobby {

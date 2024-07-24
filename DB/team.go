@@ -10,23 +10,25 @@ import (
 
 /// Database sorted by TeamID
 type Team struct {
-  TeamID   TID             `bson:"teamID"`
-  TeamName string          `bson:"teamName"`
-  Points   int             `bson:"points"`
+  TeamID    TID             `bson:"teamID"`
+  TeamName  string          `bson:"teamName"`
+  Points    int             `bson:"points"`
   // Question id and time in unix milliseconds
-  Solved   map[int16]int64 `bson:"solved"`
+  Solved    map[int16]int64 `bson:"solved"`
   // Question id and whether hint is used
-  Hints    []int16         `bson:"hints"`
-  Level    int             `bson:"level"`
+  Hints     []int16         `bson:"hints"`
+  Level     int             `bson:"level"`
+  Exception bool            `bson:"exception"`
 }
 
 func createNewTeam(user *CreatableUser) error {
   _, err := TeamDB.Coll.InsertOne(TeamDB.Context, &Team{
-    TeamID:   user.TeamID,
-    TeamName: user.TeamName,
-    Points:   0,
-    Solved:   make(map[int16]int64),
-    Level:    0,
+    TeamID:    user.TeamID,
+    TeamName:  user.TeamName,
+    Points:    0,
+    Solved:    make(map[int16]int64),
+    Level:     0,
+    Exception: false,
   })
 
   if err != nil {

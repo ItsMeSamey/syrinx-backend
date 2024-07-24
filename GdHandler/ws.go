@@ -18,26 +18,6 @@ func originChecker(r *http.Request) bool {
   return true
 }
 
-/// Checks user auth
-func (lobby *Lobby) getUserAuth(messageType int, message []byte) (byte, error) {
-  if (messageType != websocket.BinaryMessage) {
-    return 0, errors.New("getUserAuth: Invalid messageType")
-  }
-
-  if len(message) != 64 {
-    return 0, errors.New("getUserAuth: Invalid token length!")
-  }
-
-  // Validate token
-  for i, player := range lobby.Players {
-    if reflect.DeepEqual(*player.SessionID, [64]byte(message)) {
-      return byte(i), nil
-    }
-  }
-
-  return 0, errors.New("getUserAuth: Denied")
-}
-
 /// The lobby handling function responsible for connecting players to their respective lobby
 func (lobby *Lobby) wsHandler(c *gin.Context) error {
   conn, err := lobby.Upgrader.Upgrade(c.Writer, c.Request, nil)
@@ -71,64 +51,74 @@ func (lobby *Lobby) wsHandler(c *gin.Context) error {
     }
   }
 
-  // Create a player receiving channel
-  channel := make(chan []byte, 128)
-  lobby.PlayerMutex.Lock()
-  if lobby.Players[myIndex].IN != nil {
-    close(lobby.Players[myIndex].IN)
-  }
-  lobby.Players[myIndex].IN = channel
-  lobby.PlayerMutex.Unlock()
-
-  // Delete the player receiving channel in the end
-  defer func () {
-    lobby.PlayerMutex.Lock()
-    if lobby.Players[myIndex].IN != nil {
-      close(channel)
-      lobby.Players[myIndex].IN = nil
-    }
-    lobby.PlayerMutex.Unlock()
-  }()
-
-  // Handle incoming data
-  go func () {
-    for packet := range channel {
-      _ = conn.WriteMessage(websocket.BinaryMessage, packet)
-    }
-  }()
-
   // Handle outbound data
   for {
     messageType, message, err := conn.ReadMessage()
     if err != nil {
       return errors.New("wsHandler: Read error:" + err.Error())
-    }
-    if messageType == websocket.CloseMessage {
-      break
-    }
+    } else if messageType == websocket.CloseMessage { break }
 
     // Async can cause UB as values can be modified while another goroutine is in flight
     if messageType == websocket.TextMessage {
-      if err = lobby.handleTextMessage(message, conn); err != nil {
-        log.Println("wsHandler: error:", err)
-        val, err := json.Marshal(struct {Error string}{err.Error()})
-        if err != nil {
-          log.Println("Text message marshal error: ", err)
-          continue
-        }
-        _ = conn.WriteMessage(websocket.BinaryMessage, val)
-        continue
-      }
-    } else if messageType == websocket.BinaryMessage{
-      if err = lobby.handleBinaryMessage(myIndex, message); err != nil {
-        log.Println("wsHandler: error:", err)
-        _ = conn.WriteMessage(websocket.BinaryMessage, append([]byte{0xff}, []byte(err.Error())...))
-        continue
-      }
+      err = lobby.handleTextMessage(message, conn)
     } else {
       err = errors.New("wsHandler: Invalid messageType: " + strconv.Itoa(messageType))
     }
+
+    if err != nil {
+      val, jsonerr := json.Marshal(struct {Error string}{err.Error()})
+      if jsonerr == nil { log.Println("Text message marshal error: ", err) }
+      _ = conn.WriteMessage(websocket.BinaryMessage, val)
+      log.Println("wsHandler: error:", err)
+    }
   }
   return nil
+}
+
+/// Checks user auth
+func (lobby *Lobby) getUserAuth(messageType int, message []byte) (byte, error) {
+  if (messageType != websocket.BinaryMessage) {
+    return 0, errors.New("getUserAuth: Invalid messageType")
+  }
+
+  if len(message) != 64 {
+    return 0, errors.New("getUserAuth: Invalid token length!")
+  }
+
+  // Validate token
+  for i, player := range lobby.Players {
+    if reflect.DeepEqual(*player.SessionID, [64]byte(message)) {
+      return byte(i), nil
+    }
+  }
+
+  return 0, errors.New("getUserAuth: Denied")
+}
+
+/// Forcefully close the lobby
+func (lobby *Lobby) delete() {
+  lobby.deleteAllPlayer()
+
+  lobbiesMutex.Lock()
+  defer lobbiesMutex.Unlock()
+
+  // needs to be called again after mutex locking
+  lobby.deleteAllPlayer()
+
+  if _, ok := lobbies[*(lobby.Team.TeamID)]; ok {
+    delete(lobbies, *(lobby.Team.TeamID))
+  }
+}
+
+func (lobby *Lobby) deleteAllPlayer() {
+  lobby.PlayerMutex.Lock()
+  defer lobby.PlayerMutex.Unlock()
+
+  for i := range lobby.Players {
+    if lobby.Players[i].Conn != nil {
+      lobby.Players[i].Conn.Close()
+      lobby.Players[i].Conn = nil
+    }
+  }
 }
 

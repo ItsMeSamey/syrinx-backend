@@ -15,7 +15,7 @@ type (
     changed bool  `bson:"changed"`
 
     // Public fields
-    Level   int   `bson:"level"`
+    Level int `bson:"level"`
   }
 
   CallbackFunc func (prev, cur *STATE)
