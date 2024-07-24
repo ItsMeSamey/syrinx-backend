@@ -8,7 +8,6 @@ import (
   "ccs.ctf/GdHandler"
   
   "github.com/gin-gonic/gin"
-  "go.mongodb.org/mongo-driver/bson"
 )
 
 /// Function to call on signup request
@@ -73,12 +72,6 @@ func getLobbyHandler(c *gin.Context) {
 }
 
 func teamInfoHandler(c *gin.Context) {
-  type TeamMate struct {
-    Username  string `bson:"user"`
-    Email     string `bson:"mail"`
-    DiscordID string `bson:"discordID"`
-  }
-
   var userID struct {SessionID DB.SessID}
 
   if err := bindJson(c, &userID); err != nil {
@@ -97,17 +90,7 @@ func teamInfoHandler(c *gin.Context) {
     return
   }
 
-  var team *DB.Team
-  team, err = DB.TeamByTeamID(user.TeamID)
-  if err != nil {
-    setErrorJson(c, http.StatusInternalServerError, err.Error())
-    return
-  }
-
-  cursor, err := DB.UserDB.Coll.Find(DB.UserDB.Context, bson.M{"teamID": user.TeamID})
-
-  var all []TeamMate
-  err = cursor.All(DB.UserDB.Context, &all)
+  all, team, err := GdHandler.GetTeamAndPlayers(user.TeamID)
   if err != nil {
     setErrorJson(c, http.StatusInternalServerError, err.Error())
     return

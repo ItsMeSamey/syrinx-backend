@@ -12,6 +12,9 @@ import (
 
 type Player struct {
   ID        DB.ObjID    `bson:"_id,omitempty"`
+  Username  string      `bson:"user"`
+  Email     string      `bson:"mail"`
+  DiscordID string      `bson:"discordID"`
   SessionID DB.SessID   `bson:"sessionID"`
   IN        chan []byte `bson:"-"`
 }
