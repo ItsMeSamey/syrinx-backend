@@ -13,8 +13,6 @@ import (
   "ccs.ctf/GdHandler"
   
   "github.com/gin-gonic/gin"
-  "go.mongodb.org/mongo-driver/bson"
-  "go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func lobbyHandler(c *gin.Context) {
@@ -35,26 +33,19 @@ func lobbyHandler(c *gin.Context) {
 }
 
 func leaderboardHandler(c *gin.Context) {
-  batchSize := int32(1024)
-  limit := int64(1024)
-  cursor, err :=  DB.TeamDB.Coll.Find(DB.TeamDB.Context, bson.M{}, &options.FindOptions{
-    BatchSize: &batchSize,
-    Sort: bson.M{"points": -1},
-    Limit: &limit,
-  })
-  if err != nil {
-    setErrorJson(c, http.StatusInternalServerError, err.Error())
+  type TINFO struct{
+    N string
+    P int
+    L int
   }
+  var teams []TINFO
 
-  var teams []struct{
-    N string `bson:"teamName"`
-    P int    `bson:"points"`
-    L int    `bson:"level"`
+  GdHandler.TEAMSMutex.RLock()
+  for _, val := range GdHandler.TEAMS {
+    teams = append(teams, TINFO{N: val.TeamName, P: val.Points, L: val.Level})
   }
-  if err = cursor.All(DB.TeamDB.Context, &teams); err != nil {
-    setErrorJson(c, http.StatusInternalServerError, err.Error())
-  }
-  
+  GdHandler.TEAMSMutex.RUnlock()
+
   c.JSON(http.StatusOK, teams)
 }
 

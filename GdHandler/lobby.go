@@ -3,7 +3,8 @@ package GdHandler
 import (
   "sync"
   "errors"
-  
+  "net/http"
+
   "ccs.ctf/DB"
   
   "github.com/gorilla/websocket"
@@ -30,6 +31,7 @@ type (
   }
 )
 
+
 func makeLobby(ID DB.TID) (*Lobby, error) {
   team, err := DB.TeamByTeamID(ID)
   if err != nil {
@@ -40,16 +42,24 @@ func makeLobby(ID DB.TID) (*Lobby, error) {
     return nil, errors.New("LobbyIDFromUserSessionID: Team Level Mismatch")
   }
 
-  lobby := &Lobby {
-    Team: team,
-    Playercount: 0,
-    PlayerMutex: sync.RWMutex{},
-    Upgrader: websocket.Upgrader{ ReadBufferSize:  1024, WriteBufferSize: 1024, CheckOrigin: originChecker},
-    Deadtime: 0,
-  }
+  lobby := makeLobbyFromTeam(team)
 
   lobby.populatePlayers()
   return lobby, nil
+}
+
+func makeLobbyFromTeam(team *DB.Team) *Lobby {
+  return &Lobby {
+    Team: team,
+    Playercount: 0,
+    PlayerMutex: sync.RWMutex{},
+    Upgrader: websocket.Upgrader{
+      ReadBufferSize:  1024,
+      WriteBufferSize: 1024,
+      CheckOrigin:     func (r *http.Request) bool {return true},
+    },
+    Deadtime: 0,
+  }
 }
 
 func (lobby *Lobby) populatePlayers() error {
@@ -81,5 +91,18 @@ func LobbyIDFromUserSessionID(SessionID DB.SessID) (DB.TID, error) {
   }
 
   return lobby.Team.TeamID, nil
+}
+
+/// Forcefully close the lobby
+func (lobby *Lobby) delete() {
+  lobby.PlayerMutex.Lock()
+  defer lobby.PlayerMutex.Unlock()
+
+  for i := range lobby.Players {
+    if lobby.Players[i].Conn != nil {
+      lobby.Players[i].Conn.Close()
+      lobby.Players[i].Conn = nil
+    }
+  }
 }
 

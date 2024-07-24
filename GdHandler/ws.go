@@ -5,18 +5,12 @@ import (
   "errors"
   "reflect"
   "strconv"
-  "net/http"
   "encoding/json"
   
   "github.com/gin-gonic/gin"
   "github.com/gorilla/websocket"
 )
 
-
-/// origin checker for websocket connections
-func originChecker(r *http.Request) bool {
-  return true
-}
 
 /// The lobby handling function responsible for connecting players to their respective lobby
 func (lobby *Lobby) wsHandler(c *gin.Context) error {
@@ -93,32 +87,5 @@ func (lobby *Lobby) getUserAuth(messageType int, message []byte) (byte, error) {
   }
 
   return 0, errors.New("getUserAuth: Denied")
-}
-
-/// Forcefully close the lobby
-func (lobby *Lobby) delete() {
-  lobby.deleteAllPlayer()
-
-  lobbiesMutex.Lock()
-  defer lobbiesMutex.Unlock()
-
-  // needs to be called again after mutex locking
-  lobby.deleteAllPlayer()
-
-  if _, ok := lobbies[*(lobby.Team.TeamID)]; ok {
-    delete(lobbies, *(lobby.Team.TeamID))
-  }
-}
-
-func (lobby *Lobby) deleteAllPlayer() {
-  lobby.PlayerMutex.Lock()
-  defer lobby.PlayerMutex.Unlock()
-
-  for i := range lobby.Players {
-    if lobby.Players[i].Conn != nil {
-      lobby.Players[i].Conn.Close()
-      lobby.Players[i].Conn = nil
-    }
-  }
 }
 

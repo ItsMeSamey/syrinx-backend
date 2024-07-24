@@ -1,7 +1,6 @@
 package GdHandler
 
 import (
-  "time"
   "errors"
   
   "ccs.ctf/DB"
@@ -40,8 +39,13 @@ func getAddedLobby(ID DB.TID, execFunc func(*Lobby)error) (*Lobby, error) {
       lobbies[*ID] = val
       val.Playercount += 01
       lobbiesMutex.Unlock()
+      
+      go func(){
+        TEAMSMutex.Lock()
+        TEAMS = append(TEAMS, val.Team)
+        TEAMSMutex.Unlock()
+      }()
 
-      go watchdog(val)
       return val, execFunc(val)
     }
   }
@@ -50,27 +54,5 @@ func getAddedLobby(ID DB.TID, execFunc func(*Lobby)error) (*Lobby, error) {
 func ConnectToLobby(ID DB.TID, c *gin.Context) error {
   _, err := getAddedLobby(ID, func(lobby *Lobby) error { return lobby.wsHandler(c)})
   return err
-}
-
-//! WARNING: DO NOT MESS WITH THIS UNLESS YOU KNOW WHAT YOU ARE DOING
-/// Automatically close the lobby when there is no one in it
-/// This function bocks (a long as lobby exists),
-/// and probably should be async
-func watchdog(lobby *Lobby) {
-  lobby.Deadtime = 0
-  sleepTime := (30 + (lobby.Team.TeamID[0]&31))
-begin:
-  time.Sleep(time.Duration(sleepTime) * time.Second)
-  lobby.PlayerMutex.RLock()
-  if lobby.Playercount == 0 {
-    lobby.Deadtime += 1
-  }
-  lobby.PlayerMutex.RUnlock()
-
-  if lobby.Deadtime >= 10 { // Lobby timeout 5~10 minutes
-    lobby.delete()
-    return
-  }
-  goto begin
 }
 
