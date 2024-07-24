@@ -46,9 +46,23 @@ func Init() error {
     return errors.New("GdHandler.Init: error in cursor.All\n" + err.Error())
   }
 
+  var wg sync.WaitGroup
+
   for _, team := range TEAMS {
-    lobbies[*(team.TeamID)] = makeLobbyFromTeam(team)
+    wg.Add(1)
+    go func () {
+      defer wg.Done()
+      lobby := makeLobbyFromTeam(team)
+      start:
+      err := lobby.populatePlayers()
+      if err != nil {
+        goto start
+      }
+      lobbies[*(team.TeamID)] = lobby
+    }()
   }
+
+  wg.Wait()
 
   go func ()  {
     for {

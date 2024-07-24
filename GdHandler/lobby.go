@@ -1,6 +1,7 @@
 package GdHandler
 
 import (
+  "log"
   "sync"
   "errors"
   "net/http"
@@ -31,7 +32,6 @@ type (
   }
 )
 
-
 func makeLobby(ID DB.TID) (*Lobby, error) {
   team, err := DB.TeamByTeamID(ID)
   if err != nil {
@@ -44,7 +44,11 @@ func makeLobby(ID DB.TID) (*Lobby, error) {
 
   lobby := makeLobbyFromTeam(team)
 
-  lobby.populatePlayers()
+  err = lobby.populatePlayers()
+  if err != nil {
+    return nil, errors.New("LobbyIDFromUserSessionID: lobby.populatePlayers error\n" + err.Error())
+  }
+
   return lobby, nil
 }
 
@@ -75,6 +79,7 @@ func (lobby *Lobby) populatePlayers() error {
   }
 
   lobby.Players = players
+
 
   return nil
 }
