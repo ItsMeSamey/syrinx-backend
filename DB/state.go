@@ -16,6 +16,7 @@ type (
 
     // Public fields
     Level int `bson:"level"`
+    Keep  int `bson:"keep"`
   }
 
   CallbackFunc func (prev, cur *STATE)

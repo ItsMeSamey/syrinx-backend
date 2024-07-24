@@ -1,14 +1,14 @@
 package GdHandler
 
 import (
-	"errors"
-	"sort"
-	"sync"
-	"time"
-
-	"ccs.ctf/DB"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
+  "sort"
+  "sync"
+  "time"
+  "errors"
+  
+  "ccs.ctf/DB"
+  "go.mongodb.org/mongo-driver/bson"
+  "go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const MAX_TRIES = 5
@@ -25,48 +25,11 @@ var (
   TEAMSMutex sync.RWMutex = sync.RWMutex{}
 )
 
-func changeLevelTo(level int) {
-  TEAMSMutex.Lock()
-  lobbiesMutex.RLock()
-  for _, lobby := range lobbies {
-    lobby.delete()
-  }
-  lobbiesMutex.RUnlock()
-
-  sortTeams()
-
-  TEAMSMutex.Unlock()
-}
-
-func sortTeams() {
-  sort.Slice(TEAMS, func (i, j int) bool {
-    ti := TEAMS[i]
-    tj := TEAMS[j]
-    if ti.Points != tj.Points {
-      return ti.Points > tj.Points
-    }
-
-    timei := teamTimeSum(ti)
-    timej := teamTimeSum(tj)
-    if timei != timej {
-      return timei < timej
-    }
-
-    return ti.TeamName > tj.TeamName
-  })
-}
-func teamTimeSum(team *DB.Team) int64 {
-  sum := int64(0)
-  for _, val := range team.Solved {
-    sum += val
-  }
-  return sum
-}
-
 func Init() error {
   DB.Callbacks["level updater"] = func (prev, cur *DB.STATE) {
-    if prev.Level != cur.Level {
+    if prev.Level != cur.Level || prev.Keep != cur.Keep {
       LEVEL = cur.Level
+      go changeLevelTo(cur.Level, cur.Keep)
     }
   }
 
@@ -97,5 +60,57 @@ func Init() error {
   }()
 
   return nil
+}
+
+func changeLevelTo(level, keep int) {
+  TEAMSMutex.Lock()
+  lobbiesMutex.RLock()
+  for _, lobby := range lobbies {
+    lobby.delete()
+  }
+  lobbiesMutex.RUnlock()
+
+  sortTeams()
+
+  for i, team := range TEAMS {
+    var final int = 0
+    if i <= keep {
+      final = level
+    } else {
+      final = level-1
+    }
+    
+    if team.Level != final {
+      team.Level = final
+      go team.Sync(5)
+    }
+  }
+
+  TEAMSMutex.Unlock()
+}
+
+func sortTeams() {
+  sort.Slice(TEAMS, func (i, j int) bool {
+    ti := TEAMS[i]
+    tj := TEAMS[j]
+    if ti.Points != tj.Points {
+      return ti.Points > tj.Points
+    }
+
+    timei := teamTimeSum(ti)
+    timej := teamTimeSum(tj)
+    if timei != timej {
+      return timei < timej
+    }
+
+    return ti.TeamName > tj.TeamName
+  })
+}
+func teamTimeSum(team *DB.Team) int64 {
+  sum := int64(0)
+  for _, val := range team.Solved {
+    sum += val
+  }
+  return sum
 }
 
