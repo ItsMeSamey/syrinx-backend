@@ -1,11 +1,11 @@
 package GdHandler
 
 import (
-	"errors"
+  "errors"
 
-	"ccs.ctf/DB"
+  "ccs.ctf/DB"
 
-	"go.mongodb.org/mongo-driver/bson"
+  "go.mongodb.org/mongo-driver/bson"
 )
 
 type TeamMate struct {
@@ -47,3 +47,4 @@ func GetTeamAndPlayers(ID DB.TID) ([]TeamMate, *DB.Team, error) {
 
   return all, team, nil
 }
+

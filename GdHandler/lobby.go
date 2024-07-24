@@ -1,8 +1,8 @@
 package GdHandler
 
 import (
-  "errors"
   "sync"
+  "errors"
   
   "ccs.ctf/DB"
   
@@ -10,23 +10,25 @@ import (
   "go.mongodb.org/mongo-driver/bson"
 )
 
-type Player struct {
-  ID        DB.ObjID    `bson:"_id,omitempty"`
-  Username  string      `bson:"user"`
-  Email     string      `bson:"mail"`
-  DiscordID string      `bson:"discordID"`
-  SessionID DB.SessID   `bson:"sessionID"`
-  IN        chan []byte `bson:"-"`
-}
+type (
+  Player struct {
+    ID        DB.ObjID    `bson:"_id,omitempty"`
+    Username  string      `bson:"user"`
+    Email     string      `bson:"mail"`
+    DiscordID string      `bson:"discordID"`
+    SessionID DB.SessID   `bson:"sessionID"`
+    IN        chan []byte `bson:"-"`
+  }
 
-type Lobby struct {
-  Team        *DB.Team
-  Players     []*Player
-  Playercount byte
-  PlayerMutex sync.RWMutex
-  Upgrader    websocket.Upgrader
-  Deadtime    byte
-}
+  Lobby struct {
+    Team        *DB.Team
+    Players     []*Player
+    Playercount byte
+    PlayerMutex sync.RWMutex
+    Upgrader    websocket.Upgrader
+    Deadtime    byte
+  }
+)
 
 func makeLobby(ID DB.TID) (*Lobby, error) {
   team, err := DB.TeamByTeamID(ID)

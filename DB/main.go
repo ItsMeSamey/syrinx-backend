@@ -12,21 +12,21 @@ import (
   "go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-/// The Extendable Collection type
-type Collection struct {
-  Coll *mongo.Collection
-  Context context.Context
-}
+type (
+  /// The Extendable Collection type
+  Collection struct {
+    Coll *mongo.Collection
+    Context context.Context
+  }
 
-/// Type declaration used for ID's
-type TID *[3]byte
-type SessID *[64]byte
-type ObjID *primitive.ObjectID
-
-const (
-  /// Number of teams in a lobby
-  MAX_TEAMS = 4
+  /// Type declaration used for ID's
+  TID *[3]byte
+  SessID *[64]byte
+  ObjID *primitive.ObjectID
 )
+
+/// Number of teams in a lobby
+const MAX_TEAMS = 4
 
 var (
   /// The main Database
@@ -34,24 +34,32 @@ var (
 
   /// All the DB declarations
   QuestionDB Collection
-  UserDB Collection
-  TeamDB Collection
-  LobbyDB Collection
+  UserDB     Collection
+  TeamDB     Collection
+  ControlDB  Collection
 
   /// Initialize env vars
-  EMAIL_SENDER = os.Getenv("EMAIL_SENDER")
+  EMAIL_SENDER          = os.Getenv("EMAIL_SENDER")
   EMAIL_SENDER_PASSWORD = os.Getenv("EMAIL_SENDER_PASSWORD")
+
+  /// 
 )
 
 /// Initialize all Database's
 /// Programme MUST panic if this function errors as this is unrecoverable
-func InitDB(uri string) error {
+func Init() error {
+  uri := os.Getenv("MONGOURI")
+
+  if uri == "" {
+    return errors.New("MONGOURI not set")
+  }
   if EMAIL_SENDER == "" {
-    return errors.New("Email sender does not exist")
+    return errors.New("EMAIL_SENDER not set")
   }
   if EMAIL_SENDER_PASSWORD == "" {
-    return errors.New("Email password not set")
+    return errors.New("EMAIL_SENDER_PASSWORD not set")
   }
+
   ctx := context.Background()
   client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
   if err != nil {
@@ -61,14 +69,17 @@ func InitDB(uri string) error {
   if err != nil {
     return err
   }
+
   log.Println("Successfully Connected to MongoDB")
 
   DATABASE = client.Database("2024_ctf")
-  QuestionDB = Collection{DATABASE.Collection("questions"), context.TODO()}
-  UserDB = Collection{DATABASE.Collection("users"), context.TODO()}
-  TeamDB = Collection{DATABASE.Collection("teams"), context.TODO()}
-  LobbyDB = Collection{DATABASE.Collection("lobby"), context.TODO()}
-  return nil
+
+  QuestionDB = Collection{DATABASE.Collection("questions"), ctx}
+  UserDB     = Collection{DATABASE.Collection("users"),     ctx}
+  TeamDB     = Collection{DATABASE.Collection("teams"),     ctx}
+  ControlDB  = Collection{DATABASE.Collection("control"),   ctx}
+
+  return stateSync()
 }
 
 func (db *Collection) sync(bsonM bson.M, entry any) error {
@@ -102,7 +113,7 @@ func (db *Collection) syncTryHard(bsonM bson.M, entry any, maxTries byte) error 
 /// Get the result of a db quarry in a `out` object, returns true if the object exists
 /// NOTE: `out` must be a pointer or Programme will panic !
 func (db *Collection) getExists(bsonM bson.M, out any) (bool, error) {
-  result := db.Coll.FindOne(LobbyDB.Context, bsonM)
+  result := db.Coll.FindOne(db.Context, bsonM)
   err := result.Err()
 
   if err == mongo.ErrNoDocuments{
@@ -111,12 +122,10 @@ func (db *Collection) getExists(bsonM bson.M, out any) (bool, error) {
     return false, errors.New("getExistsBson: DB.FindOne error\n" + err.Error())
   }
 
-  if out == nil {
-    return true, nil
-  }
-
-  if err := result.Decode(out); err != nil {
-    return false, errors.New("getExistsBson: result.Decode error\n" + err.Error())
+  if out != nil {
+    if err := result.Decode(out); err != nil {
+      return false, errors.New("getExistsBson: result.Decode error\n" + err.Error())
+    }
   }
 
   return true, nil

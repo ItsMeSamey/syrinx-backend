@@ -2,7 +2,6 @@ package GdHandler
 
 import (
   "sync"
-  "net/http"
 )
 
 const MAX_TRIES = 5
@@ -13,8 +12,7 @@ var (
   lobbiesMutex sync.RWMutex = sync.RWMutex{}
 )
 
-/// origin checker for websocket connections
-func originChecker(r *http.Request) bool {
-  return true
+func Init() error {
+  return nil
 }
 

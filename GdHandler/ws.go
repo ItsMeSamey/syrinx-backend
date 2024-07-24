@@ -1,15 +1,22 @@
 package GdHandler
 
 import (
-  "encoding/json"
-  "errors"
   "log"
+  "errors"
   "reflect"
   "strconv"
+  "net/http"
+  "encoding/json"
   
   "github.com/gin-gonic/gin"
   "github.com/gorilla/websocket"
 )
+
+
+/// origin checker for websocket connections
+func originChecker(r *http.Request) bool {
+  return true
+}
 
 /// Checks user auth
 func (lobby *Lobby) getUserAuth(messageType int, message []byte) (byte, error) {

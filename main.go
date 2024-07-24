@@ -2,16 +2,20 @@ package main
 
 import (
   "log"
-  "os"
 
   "ccs.ctf/DB"
   "ccs.ctf/Server"
+  "ccs.ctf/GdHandler"
 )
 
 func main() {
   // Connect to the db
-  err := DB.InitDB(os.Getenv("MONGOURI"))
-  if err != nil {
+  if err := DB.Init(); err != nil {
+    log.Fatal(err)
+  }
+
+  // Connect to the db
+  if err := GdHandler.Init(); err != nil {
     log.Fatal(err)
   }
 

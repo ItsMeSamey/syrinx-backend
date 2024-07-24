@@ -7,27 +7,29 @@ import (
   "go.mongodb.org/mongo-driver/bson"
 )
 
-/// User struct to store user information
-type User struct {
-  ID            ObjID  `bson:"_id,omitempty"`
-  Username      string `bson:"user"`
-  Email         string `bson:"mail"`
-  Password      string `bson:"pass"`
-  TeamID        TID    `bson:"teamID"`
-  DiscordID     string `bson:"discordID"`
-  SessionID     SessID `bson:"sessionID"`
-  EmailReceived bool   `bson:"mailReceived"`
-}
+type (
+  /// User struct to store user information
+  User struct {
+    ID            ObjID  `bson:"_id,omitempty"`
+    Username      string `bson:"user"`
+    Email         string `bson:"mail"`
+    Password      string `bson:"pass"`
+    TeamID        TID    `bson:"teamID"`
+    DiscordID     string `bson:"discordID"`
+    SessionID     SessID `bson:"sessionID"`
+    EmailReceived bool   `bson:"mailReceived"`
+  }
 
-/// When we are creating users, we need a different struct than the above
-type CreatableUser struct {
-  Username  string  `bson:"user"`
-  Email     string  `bson:"mail"`
-  Password  string  `bson:"pass"`
-  TeamID    TID     `bson:"teamID"`
-  TeamName  string `bson:"teamName"`
-  DiscordID string  `bson:"discordID"`
-}
+  /// When we are creating users, we need a different struct than the above
+  CreatableUser struct {
+    Username  string  `bson:"user"`
+    Email     string  `bson:"mail"`
+    Password  string  `bson:"pass"`
+    TeamID    TID     `bson:"teamID"`
+    TeamName  string `bson:"teamName"`
+    DiscordID string  `bson:"discordID"`
+  }
+)
 
 /// Generates a unique SessionID
 func genSessionID() (SessID, error) {
