@@ -34,6 +34,7 @@ func lobbyHandler(c *gin.Context) {
 
 func leaderboardHandler(c *gin.Context) {
   type TINFO struct{
+    I DB.TID
     N string
     P int
     L int
@@ -42,7 +43,12 @@ func leaderboardHandler(c *gin.Context) {
 
   GdHandler.TEAMSMutex.RLock()
   for _, val := range GdHandler.TEAMS {
-    teams = append(teams, TINFO{N: val.TeamName, P: val.Points, L: val.Level})
+    teams = append(teams, TINFO{
+      I: val.TeamID,
+      N: val.TeamName,
+      P: val.Points,
+      L: val.Level,
+    })
   }
   GdHandler.TEAMSMutex.RUnlock()
 
