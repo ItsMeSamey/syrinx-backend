@@ -76,12 +76,6 @@ func Init() error {
   TeamDB     = Collection{DATABASE.Collection("teams"),     ctx}
   SyncDB     = Collection{DATABASE.Collection("state"),   ctx}
 
-  if err = stateSync(bson.M{"type": "state"}); err != nil {
-    return errors.New("DB.Init: stateSync\n" + err.Error())
-  }
-
-  go initStateSynchronizer(5)
-
   return nil
 }
 

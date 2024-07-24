@@ -27,7 +27,7 @@ func (lobby *Lobby) handleTextMessage(message []byte, conn *websocket.Conn) erro
     return errors.New(("getQuestion: could not get question from ID\n ") + err.Error())
   }
 
-  if question.Level != lobby.Team.Level {
+  if question.Level >= lobby.Team.Level {
     return errors.New("getQuestion: Level mismatch")
   }
 

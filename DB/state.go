@@ -8,54 +8,69 @@ import (
 )
 
 type (
+  /// The struct that contains the state of the server
   STATE struct {
-    ID      ObjID `bson:"_id,omitempty"`
-    Level   byte  `bson:"level"`
-    Changed bool  `bson:"changed"`
+    // Private fields
+    id      ObjID `bson:"_id,omitempty"`
+    changed bool  `bson:"changed"`
+
+    // Public fields
+    Level   int   `bson:"level"`
   }
+
   CallbackFunc func (prev, cur *STATE)
 )
 
 var (
-  State *STATE = nil
+  /// The var to store state
+  State *STATE = &STATE{
+    Level: 0,
+  }
   Callbacks map[string]CallbackFunc = make(map[string]CallbackFunc)
 )
 
+func InitSynchronizer() error {
+  if err := stateSync(bson.M{"type": "state"}); err != nil {
+    return errors.New("DB.Init: stateSync\n" + err.Error())
+  }
+
+  go startStateSynchronizer(5)
+  return nil
+}
+
+func startStateSynchronizer(maxTries byte) {
+  for {
+    time.Sleep(2 * time.Second)
+    stateSync(bson.M{"type": "state", "changed": true})
+
+    tries := byte(0)
+    start:
+    _, err := SyncDB.Coll.UpdateOne(SyncDB.Context, bson.M{"_id": State.id}, bson.D{{"$set", bson.M{"changed": false}}})
+    if tries < maxTries && err != nil {
+      tries  += 1
+      goto start
+    }
+  }
+}
+
 func stateSync(bsonM bson.M) error {
   var NEW STATE
+  prev := State
+
   if err := SyncDB.get(bsonM, &NEW); err != nil {
     return errors.New("stateSync: error in DB.get\n" + err.Error())
   }
+
+  NEW.changed = false
   State = &NEW
+  go callCallbacks(prev, State)
+
   return nil
 }
 
 func callCallbacks(prev, cur *STATE) {
   for _, val := range Callbacks {
     val(prev, cur)
-  }
-}
-
-func initStateSynchronizer(maxTries byte) {
-  for {
-    time.Sleep(2 * time.Second)
-
-    prev := State
-    stateSync(bson.M{"type": "state", "changed": true})
-    cur := State
-
-    if prev != cur {
-      cur.Changed = false
-      go callCallbacks(prev, cur)
-    }
-
-    tries := byte(0)
-    start:
-    _, err := SyncDB.Coll.UpdateOne(SyncDB.Context, bson.M{"_id": cur.ID}, bson.D{{"$set", bson.M{"changed": false}}})
-    if tries < maxTries && err != nil {
-      tries  += 1
-      goto start
-    }
   }
 }
 

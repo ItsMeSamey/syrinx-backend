@@ -19,6 +19,11 @@ func main() {
     log.Fatal(err)
   }
 
+  // Start the state synchronizer
+  if err := DB.InitSynchronizer(); err != nil {
+    log.Fatal(err)
+  }
+
   // Start serving the front end server
   Server.Start("0.0.0.0:8080", "../Syrinx_Login/dist/")
 }
