@@ -11,7 +11,7 @@ type Question struct {
   Question   string `bson:"question"`
   Answer     string `bson:"answer"`
   Points     int    `bson:"points"`
-  Hint       string `bson:"hint"` //need to change it to array of hints
+  Hint       string `bson:"hint"`
   HintPoints int    `bson:"hintpoints"`
   Level      int    `bson:"level"`
 }
@@ -39,20 +39,5 @@ func GetQuestionFromIDTryHard(ID int16, maxTries byte) (*Question, error) {
   }
 
   return question, nil
-}
-
-func postQuestion(ques *Question) error {
-  exists, err := QuestionDB.exists(bson.M{"question": ques.Question})
-  if exists {
-    return errors.New("postQuestion: Question already exists")
-  }
-  if err != nil{
-    return errors.New("postQuestion: Error in DB.exists\n" + err.Error())
-  }
-  _, err = QuestionDB.Coll.InsertOne(QuestionDB.Context, ques)
-  if err != nil {
-    return errors.New("postQuestion: Error occurred while adding question to database\n" + err.Error())
-  }
-  return nil
 }
 

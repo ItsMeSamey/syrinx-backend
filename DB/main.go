@@ -25,9 +25,6 @@ type (
   ObjID *primitive.ObjectID
 )
 
-/// Number of teams in a lobby
-const MAX_TEAMS = 4
-
 var (
   /// The main Database
   DATABASE *mongo.Database
@@ -36,7 +33,7 @@ var (
   QuestionDB Collection
   UserDB     Collection
   TeamDB     Collection
-  ControlDB  Collection
+  SyncDB     Collection
 
   /// Initialize env vars
   EMAIL_SENDER          = os.Getenv("EMAIL_SENDER")
@@ -77,9 +74,16 @@ func Init() error {
   QuestionDB = Collection{DATABASE.Collection("questions"), ctx}
   UserDB     = Collection{DATABASE.Collection("users"),     ctx}
   TeamDB     = Collection{DATABASE.Collection("teams"),     ctx}
-  ControlDB  = Collection{DATABASE.Collection("control"),   ctx}
+  SyncDB     = Collection{DATABASE.Collection("control"),   ctx}
 
-  return stateSync()
+  err = stateSync()
+  if err != nil {
+    return err
+  }
+
+  go initStateSynchronizer(5)
+
+  return nil
 }
 
 func (db *Collection) sync(bsonM bson.M, entry any) error {

@@ -20,14 +20,6 @@ type Team struct {
   Level    int             `bson:"level"`
 }
 
-func TeamByTeamID(teamID TID) (*Team, error) {
-  var team Team
-  if err := TeamDB.get(bson.M{"teamID": teamID}, &team); err != nil {
-    return nil, errors.New("TeamByTeamID: DB.get failed\n"+err.Error())
-  }
-  return &team, nil
-}
-
 func createNewTeam(user *CreatableUser) error {
   _, err := TeamDB.Coll.InsertOne(TeamDB.Context, &Team{
     TeamID:   user.TeamID,
@@ -42,6 +34,19 @@ func createNewTeam(user *CreatableUser) error {
   }
 
   return nil
+}
+
+func TeamByTeamID(teamID TID) (*Team, error) {
+  var team Team
+  if err := TeamDB.get(bson.M{"teamID": teamID}, &team); err != nil {
+    return nil, errors.New("TeamByTeamID: DB.get failed\n"+err.Error())
+  }
+  return &team, nil
+}
+
+func (team *Team) IsSolved(ID int16) bool {
+  _, ok := team.Solved[ID]
+  return ok
 }
 
 func (team *Team) Sync(maxTries byte) error {
@@ -86,10 +91,5 @@ func (team *Team) CheckAnswer(question *Question, Answer string, maxtries byte) 
   }
 
   return true, nil
-}
-
-func (team *Team) IsSolved(ID int16) bool {
-  _, ok := team.Solved[ID]
-  return ok
 }
 
