@@ -1,8 +1,8 @@
 package DB
 
 import (
-  "time"
   "errors"
+  "time"
   
   "go.mongodb.org/mongo-driver/bson"
 )
@@ -46,7 +46,7 @@ func startStateSynchronizer(maxTries byte) {
 
     tries := byte(0)
     start:
-    _, err := SyncDB.Coll.UpdateOne(SyncDB.Context, bson.M{"_id": State.id}, bson.D{{"$set", bson.M{"changed": false}}})
+    _, err := SyncDB.Coll.UpdateOne(SyncDB.Context, bson.M{"type": "state"}, bson.D{{"$set", bson.M{"changed": false}}})
     if tries < maxTries && err != nil {
       tries  += 1
       goto start
