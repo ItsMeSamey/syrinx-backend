@@ -45,6 +45,7 @@ var (
 /// Initialize all Database's
 /// Programme MUST panic if this function errors as this is unrecoverable
 func Init() error {
+  ctx := context.Background()
   uri := os.Getenv("MONGOURI")
 
   if uri == "" {
@@ -57,14 +58,13 @@ func Init() error {
     return errors.New("EMAIL_SENDER_PASSWORD not set")
   }
 
-  ctx := context.Background()
   client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
   if err != nil {
-    return err
+    return errors.New("DB.Init: mongo.Connect\n" + err.Error())
   }
-  err = client.Ping(ctx, nil)
-  if err != nil {
-    return err
+  
+  if err = client.Ping(ctx, nil); err != nil {
+    return errors.New("DB.Init: client.Ping\n" + err.Error())
   }
 
   log.Println("Successfully Connected to MongoDB")
@@ -74,11 +74,10 @@ func Init() error {
   QuestionDB = Collection{DATABASE.Collection("questions"), ctx}
   UserDB     = Collection{DATABASE.Collection("users"),     ctx}
   TeamDB     = Collection{DATABASE.Collection("teams"),     ctx}
-  SyncDB     = Collection{DATABASE.Collection("control"),   ctx}
+  SyncDB     = Collection{DATABASE.Collection("state"),   ctx}
 
-  err = stateSync()
-  if err != nil {
-    return err
+  if err = stateSync(bson.M{"type": "state"}); err != nil {
+    return errors.New("DB.Init: stateSync\n" + err.Error())
   }
 
   go initStateSynchronizer(5)
