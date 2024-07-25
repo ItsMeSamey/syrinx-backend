@@ -60,38 +60,27 @@ func (team *Team) Sync(maxTries byte) error {
 }
 
 /// Gives back the hint string
-func (team *Team) GetHint(question *Question, maxTries byte) (string, error) {
+func (team *Team) GetHint(question *Question, maxTries byte) string {
   for _, hint := range team.Hints {
     if hint == question.ID {
-      return question.Hint, nil
+      return question.Hint
     }
   }
   team.Hints = append(team.Hints, question.ID)
   team.Points -= question.HintPoints
 
-  if err := team.Sync(maxTries); err != nil {
-    return "", errors.New(("Team.GetHint: sync error\n ") + err.Error())
-  }
-
-  return question.Hint, nil
+  return question.Hint
 }
 
 /// Returns success(bool), error
-func (team *Team) CheckAnswer(question *Question, Answer string, maxtries byte) (bool, error) {
-  if team.IsSolved(question.ID) {
-    return true, errors.New("Team.CheckAnswer: already solved")
-  }
+func (team *Team) CheckAnswer(question *Question, Answer string, maxtries byte) bool {
   if !strings.EqualFold(question.Answer, Answer) {
-    return false, nil
+    return false
   }
 
-  team.Points += question.Points
   team.Solved[question.ID] = time.Now().UnixMilli()
+  team.Points += question.Points
 
-  if err := team.Sync(maxtries); err != nil {
-    return true, errors.New(("Team.CheckAnswer: sync error\n ") + err.Error())
-  }
-
-  return true, nil
+  return true
 }
 

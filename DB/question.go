@@ -1,6 +1,7 @@
 package DB
 
 import (
+  "time"
   "errors"
 
   "go.mongodb.org/mongo-driver/bson"
@@ -14,14 +15,26 @@ type Question struct {
   Hint       string `bson:"hint"`
   HintPoints int    `bson:"hintpoints"`
   Level      int    `bson:"level"`
+  Timestamp  int64  `bson:"-"`
 }
 
 func questionFromID(ID int16) (*Question, error) {
-  var question Question
+  QUESTIONSMUTEX.RLock()
+  question, ok := QUESTIONS[ID]
+  QUESTIONSMUTEX.RUnlock()
+  if ok {
+    if time.Now().Unix() - question.Timestamp <= 15 {
+      return &question, nil
+    }
+  }
   err := QuestionDB.get(bson.M{"questionID": ID}, &question)
   if err != nil {
     return nil, errors.New("QuestionFromID: DB.get error\n" + err.Error())
   }
+  QUESTIONSMUTEX.Lock()
+  question.Timestamp = time.Now().Unix()
+  QUESTIONS[question.ID] = question
+  QUESTIONSMUTEX.Unlock()
   return &question, nil
 }
 

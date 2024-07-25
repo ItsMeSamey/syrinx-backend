@@ -3,13 +3,14 @@ package DB
 import (
   "os"
   "log"
+  "sync"
   "errors"
   "context"
-  
+
   "go.mongodb.org/mongo-driver/bson"
+  "go.mongodb.org/mongo-driver/bson/primitive"
   "go.mongodb.org/mongo-driver/mongo"
   "go.mongodb.org/mongo-driver/mongo/options"
-  "go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type (
@@ -39,7 +40,8 @@ var (
   EMAIL_SENDER          = os.Getenv("EMAIL_SENDER")
   EMAIL_SENDER_PASSWORD = os.Getenv("EMAIL_SENDER_PASSWORD")
 
-  /// 
+  QUESTIONS map[int16]Question = make(map[int16]Question)
+  QUESTIONSMUTEX sync.RWMutex = sync.RWMutex{}
 )
 
 /// Initialize all Database's

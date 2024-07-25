@@ -1,16 +1,18 @@
 package GdHandler
 
 import (
-  "errors"
   "encoding/json"
+  "errors"
+  "log"
   
   "ccs.ctf/DB"
-
+  
   "github.com/gorilla/websocket"
 )
 
 /// This will probably handle questioning/answering
 func (lobby *Lobby) handleTextMessage(message []byte, conn *websocket.Conn) error {
+  log.Println("GOT: ", string(message))
   if LEVEL != lobby.Team.Level && !lobby.Team.Exception {
     return errors.New("getQuestion: Global and Team level mismatch")
   }
@@ -39,12 +41,12 @@ func (lobby *Lobby) handleTextMessage(message []byte, conn *websocket.Conn) erro
     case QUESTION_L3N6:
       retval, err = specialQuestionHint_L3N6(question, lobby.Team)
     default: 
-      retval, err = getHint(question, lobby.Team, MAX_TRIES)
+      retval, err = lobby.getHint(question, MAX_TRIES)
     }
   } else if _question.Answer != "" {
     switch (question.ID) {
     default: 
-      retval, err = checkAnswer(question, lobby.Team, _question.Answer, MAX_TRIES)
+      retval, err = lobby.checkAnswer(question, _question.Answer, MAX_TRIES)
     }
   } else {
     switch (question.ID) {
@@ -56,15 +58,22 @@ func (lobby *Lobby) handleTextMessage(message []byte, conn *websocket.Conn) erro
   if err != nil {
     return err
   }
+  
+  log.Println("Sent: ", string(retval))
   return conn.WriteMessage(websocket.TextMessage, retval)
 }
 
-func getHint(question *DB.Question, team *DB.Team, maxTries byte) ([]byte, error) {
-  hint, err := team.GetHint(question, maxTries)
-  if err != nil {
-    return nil, errors.New(("getHint: get hint\n ") + err.Error())
+func (lobby *Lobby) getHint(question *DB.Question, maxTries byte) ([]byte, error) {
+  team := lobby.Team
+
+  lobby.PlayerMutex.Lock()
+  hint := team.GetHint(question, maxTries)
+  lobby.PlayerMutex.Unlock()
+
+  if err := team.Sync(maxTries); err != nil {
+    return nil, errors.New(("Team.GetHint: sync error\n ") + err.Error())
   }
-  
+
   retval, err := json.Marshal(struct{Hint string}{hint})
   if err != nil {
     return nil, errors.New(("getHint: json Marshal error\n ") + err.Error())
@@ -73,10 +82,19 @@ func getHint(question *DB.Question, team *DB.Team, maxTries byte) ([]byte, error
   return retval, nil
 }
 
-func checkAnswer(question *DB.Question, team *DB.Team, Answer string, maxTries byte) ([]byte, error) {
-  ok, err := team.CheckAnswer(question, Answer, maxTries)
-  if err != nil {
-    return nil, errors.New(("checkAnswer error\n ") + err.Error())
+func (lobby *Lobby) checkAnswer(question *DB.Question, Answer string, maxTries byte) ([]byte, error) {
+  team := lobby.Team
+
+  lobby.PlayerMutex.Lock()
+  if team.IsSolved(question.ID) {
+    lobby.PlayerMutex.Unlock()
+    return nil, errors.New("Solved")
+  }
+  ok := team.CheckAnswer(question, Answer, maxTries)
+  lobby.PlayerMutex.Unlock()
+
+  if err := team.Sync(maxTries); err != nil {
+    return nil, errors.New(("Team.CheckAnswer: sync error\n ") + err.Error())
   }
 
   if ok {

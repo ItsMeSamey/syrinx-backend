@@ -13,10 +13,10 @@ const (
 
 
 func specialQuestionHint_L3N6(question *DB.Question, team *DB.Team) ([]byte, error) {
-  hint, err := team.GetHint(question, 5)
-  if err != nil {
-    return nil, errors.New(("getHint: get hint\n ") + err.Error())
-  }
+  hint := question.Hint
+  // if err != nil {
+  //   return nil, errors.New(("getHint: get hint\n ") + err.Error())
+  // }
 
   retval, err := json.Marshal(struct{
     Hint string
