@@ -1,14 +1,15 @@
 package GdHandler
 
 import (
-  "sync"
-  "errors"
-  "net/http"
+	"errors"
+	"net/http"
+	"strconv"
+	"sync"
 
-  "ccs.ctf/DB"
-  
-  "github.com/gorilla/websocket"
-  "go.mongodb.org/mongo-driver/bson"
+	"ccs.ctf/DB"
+
+	"github.com/gorilla/websocket"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type (
@@ -89,8 +90,10 @@ func LobbyIDFromUserSessionID(SessionID DB.SessID) (DB.TID, error) {
   if err != nil {
     return nil, errors.New("LobbyIDFromUserSessionID: getAddedLobby error\n" + err.Error())
   }
-
-  return lobby.Team.TeamID, nil
+  if lobby.Team.Level == LEVEL || lobby.Team.Exception {
+    return lobby.Team.TeamID, nil
+  }
+  return nil, errors.New("LobbyIDFromUserSessionID error: player of level " + strconv.Itoa(lobby.Team.Level) + " cannot join level " + strconv.Itoa(LEVEL))
 }
 
 /// Forcefully close the lobby
