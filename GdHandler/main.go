@@ -30,9 +30,8 @@ var (
 func Init() error {
   DB.Callback = func (prev, cur *DB.STATE) {
     if prev.Level != cur.Level || prev.Keep != cur.Keep {
+      go changeLevelTo(prev.Level, cur.Level, cur.Keep)
       LEVEL = cur.Level
-      keep := cur.Keep
-      go changeLevelTo(LEVEL, keep)
     }
 
     if cur.TeamExceptions != nil {
@@ -86,7 +85,7 @@ func Init() error {
   return nil
 }
 
-func changeLevelTo(level, keep int) {
+func changeLevelTo(prev, cur, keep int) {
   TEAMSMutex.Lock()
 
   sortTeams()
@@ -94,10 +93,18 @@ func changeLevelTo(level, keep int) {
 
   for i, team := range TEAMS {
     var final int = 0
-    if i <= keep {
-      final = level
+    if cur == prev+1 {
+      if i < keep && cur == team.Level+1 {
+        final = cur
+      } else {
+        final = team.Level
+      }
     } else {
-      final = level-1
+      if i < keep {
+        final = cur
+      } else {
+        final = prev-1
+      }
     }
 
     wg.Add(1)
@@ -120,6 +127,11 @@ func sortTeams() {
   sort.Slice(TEAMS, func (i, j int) bool {
     ti := TEAMS[i]
     tj := TEAMS[j]
+
+    if ti.Level != tj.Level {
+      return ti.Level > tj.Level
+    }
+
     if ti.Points != tj.Points {
       return ti.Points > tj.Points
     }
