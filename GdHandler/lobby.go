@@ -80,20 +80,20 @@ func (lobby *Lobby) populatePlayers() error {
   return nil
 }
 
-func LobbyIDFromUserSessionID(SessionID DB.SessID) (DB.TID, error) {
+func LobbyIDFromUserSessionID(SessionID DB.SessID) (DB.TID, int, error) {
   user, err := DB.UserFromSessionID(SessionID)
   if err != nil {
-    return nil, errors.New("LobbyIDFromUserSessionID: DB.UserFromSessionID error\n" + err.Error())
+    return nil, 0, errors.New("LobbyIDFromUserSessionID: DB.UserFromSessionID error\n" + err.Error())
   }
 
   lobby, err := getAddedLobby(user.TeamID, func(_ *Lobby) error {return nil})
   if err != nil {
-    return nil, errors.New("LobbyIDFromUserSessionID: getAddedLobby error\n" + err.Error())
+    return nil, 0, errors.New("LobbyIDFromUserSessionID: getAddedLobby error\n" + err.Error())
   }
   if lobby.Team.Level == LEVEL || lobby.Team.Exception {
-    return lobby.Team.TeamID, nil
+    return lobby.Team.TeamID, lobby.Team.Level, nil
   }
-  return nil, errors.New("LobbyIDFromUserSessionID error: player of level " + strconv.Itoa(lobby.Team.Level) + " cannot join level " + strconv.Itoa(LEVEL))
+  return nil, 0, errors.New("LobbyIDFromUserSessionID error: player of level " + strconv.Itoa(lobby.Team.Level) + " cannot join level " + strconv.Itoa(LEVEL))
 }
 
 /// Forcefully close the lobby

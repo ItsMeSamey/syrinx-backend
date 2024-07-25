@@ -62,13 +62,13 @@ func getLobbyHandler(c *gin.Context) {
     return
   }
 
-  lobbyObj, err := GdHandler.LobbyIDFromUserSessionID(user.SessionID)
+  lobbyObj, level, err := GdHandler.LobbyIDFromUserSessionID(user.SessionID)
   if err != nil {
     setErrorJson(c, http.StatusInternalServerError, err.Error())
     return
   }
 
-  setSuccessJson(c, gin.H{"LobbyID": hex.EncodeToString((*lobbyObj)[:])})
+  setSuccessJson(c, gin.H{"LobbyID": hex.EncodeToString((*lobbyObj)[:]), "Level": level, })
 }
 
 func teamInfoHandler(c *gin.Context) {
