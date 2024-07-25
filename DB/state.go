@@ -17,6 +17,7 @@ type (
     // Public fields
     Level int `bson:"level"`
     Keep  int `bson:"keep"`
+    TeamExceptions []any `bson:"teamExceptions"`
   }
 
   CallbackFunc func (prev, cur *STATE)
@@ -27,7 +28,7 @@ var (
   State *STATE = &STATE{
     Level: 0,
   }
-  Callbacks map[string]CallbackFunc = make(map[string]CallbackFunc)
+  Callback CallbackFunc = nil
 )
 
 func InitSynchronizer() error {
@@ -46,7 +47,7 @@ func startStateSynchronizer(maxTries byte) {
 
     tries := byte(0)
     start:
-    _, err := SyncDB.Coll.UpdateOne(SyncDB.Context, bson.M{"type": "state"}, bson.D{{"$set", bson.M{"changed": false}}})
+    _, err := SyncDB.Coll.UpdateOne(SyncDB.Context, bson.M{"type": "state"}, bson.D{{"$set", bson.M{"changed": false, "teamExceptions": nil}, }})
     if tries < maxTries && err != nil {
       tries  += 1
       goto start
@@ -64,14 +65,10 @@ func stateSync(bsonM bson.M) error {
 
   NEW.changed = false
   State = &NEW
-  go callCallbacks(prev, State)
+  if Callback != nil {
+    Callback(prev, State)
+  }
 
   return nil
-}
-
-func callCallbacks(prev, cur *STATE) {
-  for _, val := range Callbacks {
-    val(prev, cur)
-  }
 }
 

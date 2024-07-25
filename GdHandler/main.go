@@ -1,14 +1,16 @@
 package GdHandler
 
 import (
-  "sort"
-  "sync"
-  "time"
-  "errors"
-  
-  "ccs.ctf/DB"
-  "go.mongodb.org/mongo-driver/bson"
-  "go.mongodb.org/mongo-driver/mongo/options"
+	"encoding/base64"
+	"encoding/hex"
+	"errors"
+	"sort"
+	"sync"
+	"time"
+
+	"ccs.ctf/DB"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const MAX_TRIES = 5
@@ -26,10 +28,16 @@ var (
 )
 
 func Init() error {
-  DB.Callbacks["level updater"] = func (prev, cur *DB.STATE) {
+  DB.Callback = func (prev, cur *DB.STATE) {
     if prev.Level != cur.Level || prev.Keep != cur.Keep {
       LEVEL = cur.Level
-      go changeLevelTo(cur.Level, cur.Keep)
+      keep := cur.Keep
+      go changeLevelTo(LEVEL, keep)
+    }
+
+    if cur.TeamExceptions != nil {
+      exp := cur.TeamExceptions
+      go syncTeams(exp)
     }
   }
 
@@ -126,5 +134,61 @@ func teamTimeSum(team *DB.Team) int64 {
     sum += val
   }
   return sum
+}
+
+func syncTeams(exceptions []any) {
+  if len(exceptions) == 0 { return }
+  if len(exceptions) == 1 {
+    val, ok := exceptions[0].(string)
+    if ok {
+      if val == "" {
+        lobbiesMutex.Lock()
+        for _, val := range lobbies {
+          resyncLobby(val)
+        }
+      }
+    }
+  }
+  for _, idVar := range exceptions {
+    var id [3]byte
+    switch idTyped := idVar.(type) {
+    case []byte:
+      if len(idTyped) != 3 { continue }
+      id = [3]byte(idTyped)
+
+    case string:
+      if len(idTyped) == 6 {
+        data, err := hex.DecodeString(idTyped)
+        if err != nil { continue }
+        if len(data) != 3 { continue }
+        id = [3]byte(data)
+      } else if len(idTyped) == 4 {
+        data, err := base64.StdEncoding.DecodeString(idTyped)
+        if err != nil { continue }
+        if len(data) != 3 { continue }
+        id = [3]byte(data)
+      } else { continue }
+
+    default:
+      continue
+    }
+
+    val, ok := lobbies[id]
+    if ok { go resyncLobby(val) }
+  }
+}
+func resyncLobby(val *Lobby) {
+  team, err := DB.TeamByTeamID(val.Team.TeamID)
+  lobby := makeLobbyFromTeam(team)
+
+  if err != nil { return }
+  err = lobby.populatePlayers()
+
+  if err != nil { return }
+  val.Team = team
+  val.PlayerMutex.Lock()
+  val.delete()
+  val.Players = lobby.Players
+  val.PlayerMutex.Unlock()
 }
 

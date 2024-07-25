@@ -24,10 +24,8 @@ type (
   Lobby struct {
     Team        *DB.Team
     Players     []*Player
-    Playercount byte
     PlayerMutex sync.RWMutex
     Upgrader    websocket.Upgrader
-    Deadtime    byte
   }
 )
 
@@ -54,14 +52,12 @@ func makeLobby(ID DB.TID) (*Lobby, error) {
 func makeLobbyFromTeam(team *DB.Team) *Lobby {
   return &Lobby {
     Team: team,
-    Playercount: 0,
     PlayerMutex: sync.RWMutex{},
     Upgrader: websocket.Upgrader{
       ReadBufferSize:  1024,
       WriteBufferSize: 1024,
       CheckOrigin:     func (r *http.Request) bool {return true},
     },
-    Deadtime: 0,
   }
 }
 

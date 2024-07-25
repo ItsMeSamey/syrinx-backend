@@ -1,7 +1,6 @@
 package GdHandler
 
 import (
-  "log"
   "errors"
   "reflect"
   "strconv"
@@ -14,18 +13,17 @@ import (
 
 /// The lobby handling function responsible for connecting players to their respective lobby
 func (lobby *Lobby) wsHandler(c *gin.Context) error {
+  var myIndex int = -1
   conn, err := lobby.Upgrader.Upgrade(c.Writer, c.Request, nil)
   if err != nil {
     return errors.New("wsHandler: Upgrade error\n" + err.Error())
   }
   defer func () {
     lobby.PlayerMutex.Lock()
-    lobby.Playercount -= 1
+    lobby.disconnectPlayer(myIndex)
     lobby.PlayerMutex.Unlock()
-    conn.Close()
   }()
 
-  var myIndex byte
   // Authanticate the user
   for {
     messageType, message, err := conn.ReadMessage()
@@ -37,7 +35,7 @@ func (lobby *Lobby) wsHandler(c *gin.Context) error {
     }
     myIndex, err = lobby.getUserAuth(messageType, message)
     if err == nil {
-      if conn.WriteMessage(websocket.BinaryMessage, []byte{0x00, myIndex}) == nil {
+      if conn.WriteMessage(websocket.BinaryMessage, []byte{0x00, byte(myIndex)}) == nil {
         break
       }
     } else {
@@ -45,6 +43,9 @@ func (lobby *Lobby) wsHandler(c *gin.Context) error {
     }
   }
 
+  lobby.PlayerMutex.Lock()
+  err = lobby.connectPlayer(conn, myIndex)
+  lobby.PlayerMutex.Unlock()
   // Handle outbound data
   for {
     messageType, message, err := conn.ReadMessage()
@@ -61,31 +62,57 @@ func (lobby *Lobby) wsHandler(c *gin.Context) error {
 
     if err != nil {
       val, jsonerr := json.Marshal(struct {Error string}{err.Error()})
-      if jsonerr == nil { log.Println("Text message marshal error: ", err) }
+      if jsonerr == nil {
+        // log.Println("Text message marshal error: ", err)
+        continue
+      }
       _ = conn.WriteMessage(websocket.BinaryMessage, val)
-      log.Println("wsHandler: error:", err)
+      // log.Println("wsHandler: error:", err)
     }
   }
   return nil
 }
 
 /// Checks user auth
-func (lobby *Lobby) getUserAuth(messageType int, message []byte) (byte, error) {
+func (lobby *Lobby) getUserAuth(messageType int, message []byte) (int, error) {
   if (messageType != websocket.BinaryMessage) {
-    return 0, errors.New("getUserAuth: Invalid messageType")
+    return -1, errors.New("getUserAuth: Invalid messageType")
   }
 
   if len(message) != 64 {
-    return 0, errors.New("getUserAuth: Invalid token length!")
+    return -1, errors.New("getUserAuth: Invalid token length!")
   }
 
   // Validate token
   for i, player := range lobby.Players {
     if reflect.DeepEqual(*player.SessionID, [64]byte(message)) {
-      return byte(i), nil
+      return i, nil
     }
   }
 
-  return 0, errors.New("getUserAuth: Denied")
+  return -1, errors.New("getUserAuth: Denied")
+}
+
+func (lobby *Lobby) connectPlayer(conn *websocket.Conn, myIndex int) error {
+  if myIndex < 0 { 
+    return errors.New("lobby.connectPlayer: myIndex underflow")
+  }
+  if len(lobby.Players) >= myIndex {
+    return errors.New("lobby.connectPlayer: myIndex overflow")
+  }
+
+  lobby.Players[myIndex].Conn = conn
+  return nil
+}
+
+func (lobby *Lobby) disconnectPlayer(myIndex int) {
+  if myIndex < 0 { return }
+  if len(lobby.Players) >= myIndex { return }
+
+  if conn := lobby.Players[myIndex].Conn; conn != nil {
+    conn.Close()
+  }
+
+  lobby.Players[myIndex].Conn = nil
 }
 

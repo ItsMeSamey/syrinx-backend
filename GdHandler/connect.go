@@ -16,10 +16,6 @@ func getAddedLobby(ID DB.TID, execFunc func(*Lobby)error) (*Lobby, error) {
   val, ok := lobbies[*ID]
   lobbiesMutex.RUnlock()
   if ok {
-    val.PlayerMutex.Lock()
-    if val.Deadtime >= 10 { goto start }
-    val.Playercount += 1
-    val.PlayerMutex.Unlock()
     return val, execFunc(val)
   } else {
     // A user will be stranded in a isolated lobby if thisis ignored
@@ -37,7 +33,6 @@ func getAddedLobby(ID DB.TID, execFunc func(*Lobby)error) (*Lobby, error) {
         return nil, errors.New("ConnectToLobby: error while lobby creation\n" + err.Error())
       }
       lobbies[*ID] = val
-      val.Playercount += 01
       lobbiesMutex.Unlock()
       
       go func(){

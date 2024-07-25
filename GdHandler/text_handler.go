@@ -1,7 +1,6 @@
 package GdHandler
 
 import (
-  "log"
   "errors"
   "encoding/json"
   
@@ -12,7 +11,7 @@ import (
 
 /// This will probably handle questioning/answering
 func (lobby *Lobby) handleTextMessage(message []byte, conn *websocket.Conn) error {
-  log.Println("Got String: ", string(message))
+  // log.Println("Got String: ", string(message))
   _question := DB.Question{}
   if err := json.Unmarshal(message, &_question); err != nil {
     return err
@@ -33,11 +32,22 @@ func (lobby *Lobby) handleTextMessage(message []byte, conn *websocket.Conn) erro
 
   var retval []byte
   if _question.Hint == "true" {
-    retval, err = getHint(question, lobby.Team, MAX_TRIES)
+    switch (question.ID) {
+    case QUESTION_L3N6:
+      retval, err = specialQuestionHint_L3N6(question, lobby.Team)
+    default: 
+      retval, err = getHint(question, lobby.Team, MAX_TRIES)
+    }
   } else if _question.Answer != "" {
-    retval, err = checkAnswer(question, lobby.Team, _question.Answer, MAX_TRIES)
+    switch (question.ID) {
+    default: 
+      retval, err = checkAnswer(question, lobby.Team, _question.Answer, MAX_TRIES)
+    }
   } else {
-    retval, err = getQuestion(question)
+    switch (question.ID) {
+    default: 
+      retval, err = getQuestion(question)
+    }
   }
 
   if err != nil {
