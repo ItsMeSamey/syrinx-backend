@@ -43,11 +43,14 @@ func InitSynchronizer() error {
 func startStateSynchronizer(maxTries byte) {
   for {
     time.Sleep(2 * time.Second)
-    stateSync(bson.M{"type": "state", "changed": true})
+    err := stateSync(bson.M{"type": "state", "changed": true})
+    if err != nil {
+      continue
+    }
 
     tries := byte(0)
     start:
-    _, err := SyncDB.Coll.UpdateOne(SyncDB.Context, bson.M{"type": "state"}, bson.D{{"$set", bson.M{"changed": false, "teamExceptions": nil}, }})
+    _, err = SyncDB.Coll.UpdateOne(SyncDB.Context, bson.M{"type": "state", "changed": true}, bson.D{{"$set", bson.M{"changed": false, "teamExceptions": nil}, }})
     if tries < maxTries && err != nil {
       tries  += 1
       goto start
