@@ -45,7 +45,7 @@ func authanticationHandler(c *gin.Context) {
     return
   }
 
-  setSuccessJson(c, gin.H{"SessionID": usr.SessionID, "TeamID": user.TeamID})
+  setSuccessJson(c, gin.H{"SessionID": usr.SessionID})
 }
 
 /// Function to call when user asks for their lobby

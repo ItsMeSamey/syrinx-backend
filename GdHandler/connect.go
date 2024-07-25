@@ -10,13 +10,13 @@ import (
 
 //! WARNING: DO NOT MESS WITH THIS UNLESS YOU KNOW WHAT YOU ARE DOING
 /// Connect to a lobby if one exists or add it to the lobby map
-func getAddedLobby(ID DB.TID, execFunc func(*Lobby)error) (*Lobby, error) {
+func getAddedLobby(ID DB.TID) (*Lobby, error) {
   start:
   lobbiesMutex.RLock()
   val, ok := lobbies[*ID]
   lobbiesMutex.RUnlock()
   if ok {
-    return val, execFunc(val)
+    return val, nil
   } else {
     // A user will be stranded in a isolated lobby if thisis ignored
     lobbiesMutex.Lock()
@@ -41,13 +41,16 @@ func getAddedLobby(ID DB.TID, execFunc func(*Lobby)error) (*Lobby, error) {
         TEAMSMutex.Unlock()
       }()
 
-      return val, execFunc(val)
+      return val, nil
     }
   }
 }
 
 func ConnectToLobby(ID DB.TID, c *gin.Context) error {
-  _, err := getAddedLobby(ID, func(lobby *Lobby) error { return lobby.wsHandler(c)})
-  return err
+  val, err := getAddedLobby(ID)
+  if err != nil {
+    return err
+  }
+  return val.wsHandler(c)
 }
 

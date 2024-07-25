@@ -1,15 +1,15 @@
 package GdHandler
 
 import (
-	"errors"
-	"net/http"
-	"strconv"
-	"sync"
-
-	"ccs.ctf/DB"
-
-	"github.com/gorilla/websocket"
-	"go.mongodb.org/mongo-driver/bson"
+  "errors"
+  "net/http"
+  "strconv"
+  "sync"
+  
+  "ccs.ctf/DB"
+  
+  "github.com/gorilla/websocket"
+  "go.mongodb.org/mongo-driver/bson"
 )
 
 type (
@@ -76,7 +76,6 @@ func (lobby *Lobby) populatePlayers() error {
 
   lobby.Players = players
 
-
   return nil
 }
 
@@ -86,7 +85,7 @@ func LobbyIDFromUserSessionID(SessionID DB.SessID) (DB.TID, int, error) {
     return nil, 0, errors.New("LobbyIDFromUserSessionID: DB.UserFromSessionID error\n" + err.Error())
   }
 
-  lobby, err := getAddedLobby(user.TeamID, func(_ *Lobby) error {return nil})
+  lobby, err := getAddedLobby(user.TeamID)
   if err != nil {
     return nil, 0, errors.New("LobbyIDFromUserSessionID: getAddedLobby error\n" + err.Error())
   }

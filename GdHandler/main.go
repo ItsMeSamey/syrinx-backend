@@ -88,13 +88,9 @@ func Init() error {
 
 func changeLevelTo(level, keep int) {
   TEAMSMutex.Lock()
-  lobbiesMutex.RLock()
-  for _, lobby := range lobbies {
-    lobby.delete()
-  }
-  lobbiesMutex.RUnlock()
 
   sortTeams()
+  var wg sync.WaitGroup
 
   for i, team := range TEAMS {
     var final int = 0
@@ -103,14 +99,21 @@ func changeLevelTo(level, keep int) {
     } else {
       final = level-1
     }
-    
-    if team.Level != final {
-      team.Level = final
-      go team.Sync(5)
-    }
+
+    wg.Add(1)
+    go func () {
+      defer wg.Done()
+      if team.Level != final {
+        team.Level = final
+        team.Sync(5)
+      }
+      val, ok := lobbies[*team.TeamID]
+      if ok { val.delete() }
+    }()
   }
 
   TEAMSMutex.Unlock()
+  wg.Wait()
 }
 
 func sortTeams() {
@@ -139,15 +142,14 @@ func teamTimeSum(team *DB.Team) int64 {
 }
 
 func syncTeams(exceptions []any) {
-  if len(exceptions) == 0 { return }
   if len(exceptions) == 1 {
     val, ok := exceptions[0].(string)
     if ok {
       if val == "ALL" {
-        lobbiesMutex.Lock()
         for _, val := range lobbies {
-          resyncLobby(val)
+          go resyncLobby(val)
         }
+        return
       }
     }
   }
@@ -191,7 +193,6 @@ func resyncLobby(val *Lobby) {
   if err != nil { return }
 
   val.PlayerMutex.Lock()
-  lobbiesMutex.Lock()
 
   *(val.Team) = *team
   for i := range lobby.Players {
@@ -202,7 +203,6 @@ func resyncLobby(val *Lobby) {
   }
   val.Players = lobby.Players
 
-  lobbiesMutex.Unlock()
   val.PlayerMutex.Unlock()
 }
 

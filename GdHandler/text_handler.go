@@ -11,6 +11,9 @@ import (
 
 /// This will probably handle questioning/answering
 func (lobby *Lobby) handleTextMessage(message []byte, conn *websocket.Conn) error {
+  if LEVEL != lobby.Team.Level && !lobby.Team.Exception {
+    return errors.New("getQuestion: Global and Team level mismatch")
+  }
   // log.Println("Got String: ", string(message))
   _question := DB.Question{}
   if err := json.Unmarshal(message, &_question); err != nil {
@@ -27,7 +30,7 @@ func (lobby *Lobby) handleTextMessage(message []byte, conn *websocket.Conn) erro
   }
 
   if question.Level != lobby.Team.Level && !lobby.Team.Exception {
-    return errors.New("getQuestion: Team Level mismatch")
+    return errors.New("getQuestion: Question and Team level mismatch")
   }
 
   var retval []byte
