@@ -66,7 +66,9 @@ func Init() error {
       if err != nil {
         goto start
       }
+      lobbiesMutex.Lock()
       lobbies[*(team.TeamID)] = lobby
+      lobbiesMutex.Unlock()
     }()
   }
 
