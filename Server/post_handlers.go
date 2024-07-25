@@ -102,6 +102,7 @@ func teamInfoHandler(c *gin.Context) {
     "A": all,
     "N": team.TeamName,
     "P": team.Points,
+    "L": team.Level,
   })
 }
 
