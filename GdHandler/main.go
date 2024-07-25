@@ -1,16 +1,16 @@
 package GdHandler
 
 import (
-	"encoding/base64"
-	"encoding/hex"
-	"errors"
-	"sort"
-	"sync"
-	"time"
-
-	"ccs.ctf/DB"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
+  "sort"
+  "sync"
+  "time"
+  "errors"
+  "encoding/hex"
+  "encoding/base64"
+  
+  "ccs.ctf/DB"
+  "go.mongodb.org/mongo-driver/bson"
+  "go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const MAX_TRIES = 5
@@ -174,7 +174,9 @@ func syncTeams(exceptions []any) {
     }
 
     val, ok := lobbies[id]
-    if ok { go resyncLobby(val) }
+    if ok {
+      go resyncLobby(val)
+    }
   }
 }
 func resyncLobby(val *Lobby) {
@@ -185,10 +187,20 @@ func resyncLobby(val *Lobby) {
   err = lobby.populatePlayers()
 
   if err != nil { return }
-  val.Team = team
+
   val.PlayerMutex.Lock()
-  val.delete()
+  lobbiesMutex.Lock()
+
+  *(val.Team) = *team
+  for i := range lobby.Players {
+    if lobby.Players[i].Conn != nil {
+      lobby.Players[i].Conn.Close()
+      lobby.Players[i].Conn = nil
+    }
+  }
   val.Players = lobby.Players
+
+  lobbiesMutex.Unlock()
   val.PlayerMutex.Unlock()
 }
 
