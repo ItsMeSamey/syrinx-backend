@@ -141,7 +141,7 @@ func syncTeams(exceptions []any) {
   if len(exceptions) == 1 {
     val, ok := exceptions[0].(string)
     if ok {
-      if val == "" {
+      if val == "ALL" {
         lobbiesMutex.Lock()
         for _, val := range lobbies {
           resyncLobby(val)
