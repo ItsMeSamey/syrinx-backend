@@ -3,7 +3,7 @@ package GdHandler
 import (
   "encoding/json"
   "errors"
-  "log"
+  // "log"
   
   "ccs.ctf/DB"
   
@@ -12,7 +12,7 @@ import (
 
 /// This will probably handle questioning/answering
 func (lobby *Lobby) handleTextMessage(message []byte, conn *websocket.Conn) error {
-  log.Println("GOT: ", string(message))
+  // log.Println("GOT: ", string(message))
   if LEVEL != lobby.Team.Level && !lobby.Team.Exception {
     return errors.New("getQuestion: Global and Team level mismatch")
   }
@@ -59,7 +59,7 @@ func (lobby *Lobby) handleTextMessage(message []byte, conn *websocket.Conn) erro
     return err
   }
   
-  log.Println("Sent: ", string(retval))
+  // log.Println("Sent: ", string(retval))
   return conn.WriteMessage(websocket.TextMessage, retval)
 }
 

@@ -1,7 +1,7 @@
 package GdHandler
 
 import (
-  "log"
+  // "log"
   "errors"
   "reflect"
   "strconv"
@@ -64,10 +64,10 @@ func (lobby *Lobby) wsHandler(c *gin.Context) error {
     if err != nil {
       val, jsonerr := json.Marshal(struct {Error string}{Error: err.Error()})
       if jsonerr != nil {
-        log.Println("Text message marshal error: ", err)
+        // log.Println("Text message marshal error: ", err)
         continue
       }
-      log.Println("wsHandler: error:", string(val))
+      // log.Println("wsHandler: error:", string(val))
       _ = conn.WriteMessage(websocket.TextMessage, val)
     }
   }
