@@ -16,6 +16,11 @@ import (
 )
 
 func lobbyHandler(c *gin.Context) {
+  if !DB.State.GameOn {
+    setErrorJson(c, http.StatusBadRequest, "GAME STOPPED!!")
+    return
+  }
+
   ID, err := hex.DecodeString(c.Param("lobbyID"))
   if err != nil {
     setErrorJson(c, http.StatusInternalServerError, err.Error())

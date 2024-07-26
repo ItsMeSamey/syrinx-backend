@@ -12,6 +12,11 @@ import (
 
 /// Function to call on signup request
 func signupHandler(c *gin.Context) {
+  if !DB.State.SignOn {
+    setErrorJson(c, http.StatusBadRequest, "Signup Ability Disabled")
+    return
+  }
+
   var user DB.CreatableUser
   if err := bindJson(c, &user); err != nil {
     setErrorJson(c, http.StatusBadRequest, err.Error())
@@ -50,6 +55,11 @@ func authanticationHandler(c *gin.Context) {
 
 /// Function to call when user asks for their lobby
 func getLobbyHandler(c *gin.Context) {
+  if !DB.State.GameOn {
+    setErrorJson(c, http.StatusBadRequest, "GAME STOPPED!!")
+    return
+  }
+
   var user struct { SessionID DB.SessID }
 
   if err := bindJson(c, &user); err != nil {

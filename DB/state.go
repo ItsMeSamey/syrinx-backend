@@ -17,6 +17,8 @@ type (
     // Public fields
     Level int `bson:"level"`
     Keep  int `bson:"keep"`
+    GameOn bool `bson:"gameOn"`
+    SignOn bool `bson:"signOn"`
     TeamExceptions []any `bson:"teamExceptions"`
   }
 
