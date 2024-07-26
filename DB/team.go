@@ -110,7 +110,9 @@ func (team *Team) Repoint() {
     log.Println("Error for teamID: ", hex.EncodeToString((*team.TeamID)[:]), "\n", err)
   }
 
-  log.Println("teamID: ", hex.EncodeToString((*team.TeamID)[:]), ". Changing points from ", team.Points, " to ", points)
+  if team.Points != points {
+    log.Println("teamID: ", hex.EncodeToString((*team.TeamID)[:]), ". Changing points from ", team.Points, " to ", points)
+  }
   team.Points = points
 }
 
