@@ -53,7 +53,9 @@ func startStateSynchronizer(maxTries byte) {
 
     tries := byte(0)
     start:
-    _, err = SyncDB.Coll.UpdateOne(SyncDB.Context, bson.M{"type": "state", "changed": true}, bson.D{{"$set", bson.M{"changed": false, "teamExceptions": nil}, }})
+    _, err = SyncDB.Coll.UpdateOne(SyncDB.Context, bson.M{"type": "state", "changed": true},
+      bson.D{{"$set", bson.M{"changed": false, "teamExceptions": nil, "repointAll": false}, }},
+    )
     if tries < maxTries && err != nil {
       tries  += 1
       goto start

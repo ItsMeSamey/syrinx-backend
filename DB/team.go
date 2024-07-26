@@ -89,10 +89,10 @@ func (team *Team) CheckAnswer(question *Question, Answer string, maxtries byte) 
 func (team *Team) Repoint() {
   points := 0
 
-  for qid, _ := range team.Solved {
+  for qid := range team.Solved {
     ques, err := GetQuestionFromIDTryHard(qid, 5)
     if err != nil {
-    log.Println("Error for teamID: ", hex.EncodeToString((*team.TeamID)[:]), "\n", err)
+      log.Println("Error for teamID: ", hex.EncodeToString((*team.TeamID)[:]), "\n", err)
     }
     points += ques.Points
   }
@@ -100,15 +100,17 @@ func (team *Team) Repoint() {
   for _, qid := range team.Hints {
     ques, err := GetQuestionFromIDTryHard(qid, 5)
     if err != nil {
-    log.Println("Error for teamID: ", hex.EncodeToString((*team.TeamID)[:]), "\n", err)
+      log.Println("Error for teamID: ", hex.EncodeToString((*team.TeamID)[:]), "\n", err)
     }
     points -= ques.HintPoints
   }
 
-  team.Points = points
   err := team.Sync(5)
   if err != nil {
     log.Println("Error for teamID: ", hex.EncodeToString((*team.TeamID)[:]), "\n", err)
   }
+
+  log.Println("teamID: ", hex.EncodeToString((*team.TeamID)[:]), ". Changing points from ", team.Points, " to ", points)
+  team.Points = points
 }
 
