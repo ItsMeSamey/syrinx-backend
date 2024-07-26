@@ -20,6 +20,7 @@ type (
     GameOn bool `bson:"gameOn"`
     SignOn bool `bson:"signOn"`
     TeamExceptions []any `bson:"teamExceptions"`
+    Repoint bool `bson:"repointAll"`
   }
 
   CallbackFunc func (prev, cur *STATE)

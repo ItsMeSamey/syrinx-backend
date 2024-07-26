@@ -2,7 +2,6 @@ package Server
 
 import (
   "io"
-  "log"
   "fmt"
   "math"
   "strconv"
@@ -33,7 +32,7 @@ func lobbyHandler(c *gin.Context) {
   }
 
   if err := GdHandler.ConnectToLobby(DB.TID(ID), c); err != nil {
-    log.Println(err)
+    // fmt.Println(err)
   }
 }
 

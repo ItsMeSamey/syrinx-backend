@@ -1,11 +1,13 @@
 package DB
 
 import (
-  "time"
-  "errors"
-  "strings"
-  
-  "go.mongodb.org/mongo-driver/bson"
+	"encoding/hex"
+	"errors"
+	"log"
+	"strings"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 /// Database sorted by TeamID
@@ -82,5 +84,31 @@ func (team *Team) CheckAnswer(question *Question, Answer string, maxtries byte) 
   team.Points += question.Points
 
   return true
+}
+
+func (team *Team) Repoint() {
+  points := 0
+
+  for qid, _ := range team.Solved {
+    ques, err := GetQuestionFromIDTryHard(qid, 5)
+    if err != nil {
+    log.Println("Error for teamID: ", hex.EncodeToString((*team.TeamID)[:]), "\n", err)
+    }
+    points += ques.Points
+  }
+
+  for _, qid := range team.Hints {
+    ques, err := GetQuestionFromIDTryHard(qid, 5)
+    if err != nil {
+    log.Println("Error for teamID: ", hex.EncodeToString((*team.TeamID)[:]), "\n", err)
+    }
+    points -= ques.HintPoints
+  }
+
+  team.Points = points
+  err := team.Sync(5)
+  if err != nil {
+    log.Println("Error for teamID: ", hex.EncodeToString((*team.TeamID)[:]), "\n", err)
+  }
 }
 

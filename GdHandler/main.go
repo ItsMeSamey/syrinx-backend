@@ -38,6 +38,10 @@ func Init() error {
       exp := cur.TeamExceptions
       go syncTeams(exp)
     }
+
+    if cur.Repoint {
+      go rePointAll()
+    }
   }
 
   batchSize := int32(1024)
@@ -78,7 +82,7 @@ func Init() error {
       TEAMSMutex.Lock()
       sortTeams()
       TEAMSMutex.Unlock()
-      time.Sleep(2500 * time.Millisecond)
+      time.Sleep(4500 * time.Millisecond)
     }
   }()
 
@@ -216,5 +220,23 @@ func resyncLobby(val *Lobby) {
   val.Players = lobby.Players
 
   val.PlayerMutex.Unlock()
+}
+
+func rePointAll() {
+  lobbiesMutex.RLock()
+
+  var wg sync.WaitGroup
+  for _, lobby := range lobbies {
+    wg.Add(1)
+    go func () {
+      lobby.PlayerMutex.Lock()
+      lobby.Team.Repoint()
+      lobby.PlayerMutex.Unlock()
+      wg.Done()
+    }()
+  }
+  lobbiesMutex.RUnlock()
+  wg.Wait()
+  sortTeams()
 }
 
