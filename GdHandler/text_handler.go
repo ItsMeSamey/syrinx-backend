@@ -13,6 +13,9 @@ import (
 /// This will probably handle questioning/answering
 func (lobby *Lobby) handleTextMessage(message []byte, conn *websocket.Conn) error {
   // log.Println("GOT: ", string(message))
+  if !DB.State.GameOn {
+    return errors.New("Game Has ")
+  }
   if LEVEL != lobby.Team.Level && !lobby.Team.Exception {
     return errors.New("getQuestion: Global and Team level mismatch")
   }
