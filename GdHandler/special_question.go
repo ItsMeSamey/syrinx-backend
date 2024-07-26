@@ -8,7 +8,7 @@ import (
 )
 
 const (
-  QUESTION_L3N6 = 101
+  QUESTION_L3N6 = 81
 )
 
 

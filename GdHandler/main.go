@@ -103,7 +103,7 @@ func changeLevelTo(prev, cur, keep int) {
       if i < keep {
         final = cur
       } else {
-        final = prev-1
+        final = min(cur-1, team.Level)
       }
     }
 
