@@ -14,11 +14,7 @@ type TeamMate struct {
   DiscordID string `bson:"discordID"`
 }
 
-func GetTeamAndPlayers(ID DB.TID) ([]TeamMate, *DB.Team, error) {
-  var team *DB.Team
-  var all []TeamMate
-  var err error
-
+func GetTeamAndPlayers(ID DB.TID) (all []TeamMate, team *DB.Team, err error) {
   lobbiesMutex.RLock()
   defer lobbiesMutex.RUnlock()
   val, ok := lobbies[*ID]

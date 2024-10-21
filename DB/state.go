@@ -39,11 +39,11 @@ func InitSynchronizer() error {
     return errors.New("DB.Init: stateSync\n" + err.Error())
   }
 
-  go startStateSynchronizer(5)
+  go startUpdater(5)
   return nil
 }
 
-func startStateSynchronizer(maxTries byte) {
+func startUpdater(maxTries byte) {
   for {
     time.Sleep(2 * time.Second)
     err := stateSync(bson.M{"type": "state", "changed": true})

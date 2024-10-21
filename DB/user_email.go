@@ -39,7 +39,7 @@ func internalSendConfirmationEmail(user *CreatableUser) error {
   message := subject + mime + body.String()
 
   err = smtp.SendMail("smtp.gmail.com:587", smtp.PlainAuth("", EMAIL_SENDER, EMAIL_SENDER_PASSWORD, "smtp.gmail.com"),
-                      EMAIL_SENDER, []string{user.Email}, []byte(message),
+    EMAIL_SENDER, []string{user.Email}, []byte(message),
   )
   if err != nil {
     return err
@@ -73,3 +73,4 @@ func sendEmailAsync(user *CreatableUser) {
     err = internalUpdateEmailStatus(user)
   }
 }
+

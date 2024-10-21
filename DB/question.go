@@ -2,13 +2,14 @@ package DB
 
 import (
   "time"
-  "errors"
+
+  "ccs.ctf/utils"
 
   "go.mongodb.org/mongo-driver/bson"
 )
 
 type Question struct {
-  ID         int16  `bson:"questionID"`
+  ID         uint16  `bson:"questionID"`
   Question   string `bson:"question"`
   Answer     string `bson:"answer"`
   Points     int    `bson:"points"`
@@ -18,39 +19,20 @@ type Question struct {
   Timestamp  int64  `bson:"-"`
 }
 
-func questionFromID(ID int16) (*Question, error) {
-  QUESTIONSMUTEX.RLock()
-  question, ok := QUESTIONS[ID]
-  QUESTIONSMUTEX.RUnlock()
+func QuestionFromID(ID uint16, maxTries byte) (question Question, err error) {
+  question, ok := QUESTIONS.Get(ID)
   if ok {
-    if time.Now().Unix() - question.Timestamp <= 15 {
-      return &question, nil
-    }
+    if time.Now().Unix() - question.Timestamp <= 15 { return }
   }
-  err := QuestionDB.get(bson.M{"questionID": ID}, &question)
-  if err != nil {
-    return nil, errors.New("QuestionFromID: DB.get error\n" + err.Error())
-  }
-  QUESTIONSMUTEX.Lock()
+
+  err = tryHard(func () error {
+    return utils.WithStack(QuestionDB.get(bson.M{"questionID": ID}, &question))
+  }, maxTries)
+
+  if err != nil { return }
+
   question.Timestamp = time.Now().Unix()
-  QUESTIONS[question.ID] = question
-  QUESTIONSMUTEX.Unlock()
-  return &question, nil
-}
-
-func GetQuestionFromIDTryHard(ID int16, maxTries byte) (*Question, error) {
-  var tries byte = 0
-
-  getQuestion:
-  question, err := questionFromID(ID)
-  if err != nil {
-    if tries > maxTries {
-      return nil, errors.New("GetQuestionFromIDTryHard: Error in DB.exists, Max Tries reached\n" + err.Error())
-    }
-    tries += 1;
-    goto getQuestion
-  }
-
-  return question, nil
+  QUESTIONS.Set(question.ID, question)
+  return
 }
 

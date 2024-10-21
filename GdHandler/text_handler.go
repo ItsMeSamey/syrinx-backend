@@ -29,7 +29,7 @@ func (lobby *Lobby) handleTextMessage(message []byte, conn *websocket.Conn) erro
     return errors.New("Solved")
   }
 
-  question, err := DB.GetQuestionFromIDTryHard(_question.ID, MAX_TRIES)
+  question, err := DB.QuestionFromID(_question.ID, MAX_TRIES)
   if err != nil {
     return errors.New(("getQuestion: could not get question from ID\n ") + err.Error())
   }
@@ -42,19 +42,19 @@ func (lobby *Lobby) handleTextMessage(message []byte, conn *websocket.Conn) erro
   if _question.Hint == "true" {
     switch (question.ID) {
     case QUESTION_L3N6:
-      retval, err = specialQuestionHint_L3N6(question, lobby.Team)
+      retval, err = specialQuestionHint_L3N6(&question, lobby.Team)
     default: 
-      retval, err = lobby.getHint(question, MAX_TRIES)
+      retval, err = lobby.getHint(&question, MAX_TRIES)
     }
   } else if _question.Answer != "" {
     switch (question.ID) {
     default: 
-      retval, err = lobby.checkAnswer(question, _question.Answer, MAX_TRIES)
+      retval, err = lobby.checkAnswer(&question, _question.Answer, MAX_TRIES)
     }
   } else {
     switch (question.ID) {
     default: 
-      retval, err = getQuestion(question)
+      retval, err = getQuestion(&question)
     }
   }
 

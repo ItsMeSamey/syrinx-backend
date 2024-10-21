@@ -1,10 +1,11 @@
 package DB
 
 import (
-  "errors"
-  "crypto/rand"
+	"crypto/rand"
+	"errors"
 
-  "go.mongodb.org/mongo-driver/bson"
+	"ccs.ctf/utils"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type (
@@ -32,18 +33,18 @@ type (
 )
 
 /// Generates a unique SessionID
-func genSessionID() (SessID, error) {
+func genSessionID() (ID SessID, err error) {
   times := 0
   start:
 
   bytes := make([]byte, 6*64)
-  _, err := rand.Read(bytes)
-  ID := SessID(bytes)
+  _, err = rand.Read(bytes)
+  ID = SessID(bytes)
   if ID == nil {
     return nil, errors.New("genSessionID: ID generation failed")
   }
   if err != nil {
-    return nil, err
+    return nil, utils.WithStack(err)
   }
   exists, err := UserDB.exists(bson.M{"sessionID": bytes})
   if exists {
@@ -57,18 +58,18 @@ func genSessionID() (SessID, error) {
 }
 
 /// Generates a unique TeamID
-func genTeamID() (TID, error) {
+func genTeamID() (ID TID, err  error) {
   times := 0
   start:
 
   bytes := make([]byte, 3)
-  _, err := rand.Read(bytes)
-  ID := TID(bytes)
+  _, err = rand.Read(bytes)
+  ID = TID(bytes)
   if ID == nil {
     return nil, errors.New("genTeamID: ID generation failed")
   }
   if err != nil {
-    return nil, err
+    return nil, utils.WithStack(err)
   }
   exists, err := UserDB.exists(bson.M{"teamID": bytes})
   if exists {
@@ -82,17 +83,17 @@ func genTeamID() (TID, error) {
 }
 
 /// Function to create a user in DB
-func CreateUser(user *CreatableUser) (SessID, error) {
+func CreateUser(user *CreatableUser) (SessionID SessID, err error) {
   exists, err := UserDB.exists(bson.M{"user": user.Username})
-  if err != nil { return nil, errors.New("CreateUser: Error while username lookup\n"+ err.Error()) }
+  if err != nil { return }
   if exists { return nil, errors.New("CreateUser: User already exists") }
 
   exists, err = UserDB.exists(bson.M{"mail": user.Email})
-  if err != nil { return nil, errors.New("CreateUser: Error while email lookup\n"+ err.Error()) }
+  if err != nil { return }
   if exists { return nil, errors.New("CreateUser: Email cannot be reused") }
 
   exists, err = UserDB.exists(bson.M{"discordID": user.DiscordID})
-  if err != nil { return nil, errors.New("CreateUser: Error while discordID lookup\n"+ err.Error()) }
+  if err != nil { return }
   if exists { return nil, errors.New("CreateUser: Discord ID cannot be reused") }
 
   if user.TeamID == nil {
@@ -101,18 +102,15 @@ func CreateUser(user *CreatableUser) (SessID, error) {
     }
     tid, err := genTeamID()
     if err != nil {
-      return nil, errors.New("CreateUser: Could not generate teamID\n"+ err.Error())
+      return nil, err
     }
     user.TeamID = tid
-
-    err = createNewTeam(user)
-    if err != nil {
-      return nil, errors.New("CreateUser: Could not create team in db\n"+ err.Error())
-    }
+    
+    if err = utils.WithStack(createNewTeam(user)); err != nil { return nil, err }
   } else {
     num, err := UserDB.Coll.CountDocuments(UserDB.Context, bson.M{"teamID": user.TeamID})
     if err != nil {
-      return nil, errors.New("CreateUser: Error while team lookup\n"+ err.Error())
+      return nil, utils.WithStack(err)
     }
     if num == 0 {
       return nil, errors.New("CreateUser: Team does not exist")
@@ -122,15 +120,12 @@ func CreateUser(user *CreatableUser) (SessID, error) {
 
     team, err := TeamByTeamID(user.TeamID)
     if err != nil {
-      return nil, errors.New("CreateUser: could not get name of the team\n"+ err.Error())
+      return nil, err
     }
     user.TeamName = team.TeamName
   }
 
-  SessionID, err := genSessionID()
-  if err != nil { return nil, err }
-
-  go sendEmailAsync(user)
+  if SessionID, err = genSessionID(); err != nil { return nil, err }
 
   _, err = UserDB.Coll.InsertOne(UserDB.Context, &User{
     Username     : user.Username,
@@ -141,6 +136,11 @@ func CreateUser(user *CreatableUser) (SessID, error) {
     SessionID    : SessionID,
     EmailReceived: false,
   })
+  if err != nil {
+    return nil, utils.WithStack(err)
+  }
+
+  go sendEmailAsync(user)
   return SessionID, err
 }
 

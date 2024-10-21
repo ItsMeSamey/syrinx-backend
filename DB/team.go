@@ -1,13 +1,13 @@
 package DB
 
 import (
-	"encoding/hex"
-	"errors"
-	"log"
-	"strings"
-	"time"
+  "encoding/hex"
+  "log"
+  "strings"
+  "time"
 
-	"go.mongodb.org/mongo-driver/bson"
+  "ccs.ctf/utils"
+  "go.mongodb.org/mongo-driver/bson"
 )
 
 /// Database sorted by TeamID
@@ -16,9 +16,9 @@ type Team struct {
   TeamName  string          `bson:"teamName"`
   Points    int             `bson:"points"`
   // Question id and time in unix milliseconds
-  Solved    map[int16]int64 `bson:"solved"`
+  Solved    map[uint16]int64 `bson:"solved"`
   // Question id and whether hint is used
-  Hints     []int16         `bson:"hints"`
+  Hints     []uint16        `bson:"hints"`
   Level     int             `bson:"level"`
   Exception bool            `bson:"exception"`
 }
@@ -28,37 +28,26 @@ func createNewTeam(user *CreatableUser) error {
     TeamID:    user.TeamID,
     TeamName:  user.TeamName,
     Points:    0,
-    Solved:    make(map[int16]int64),
+    Solved:    make(map[uint16]int64),
     Level:     0,
     Exception: false,
   })
 
-  if err != nil {
-    return errors.New("createTeam: Error while Team insertion" + err.Error())
-  }
-
-  return nil
+  return utils.WithStack(err)
 }
 
-func TeamByTeamID(teamID TID) (*Team, error) {
-  var team Team
-  if err := TeamDB.get(bson.M{"teamID": teamID}, &team); err != nil {
-    return nil, errors.New("TeamByTeamID: DB.get failed\n"+err.Error())
-  }
-  return &team, nil
+func TeamByTeamID(teamID TID) (team *Team, err error) {
+  err = utils.WithStack(TeamDB.get(bson.M{"teamID": teamID}, team))
+  return
 }
 
-func (team *Team) IsSolved(ID int16) bool {
-  _, ok := team.Solved[ID]
-  return ok
+func (team *Team) IsSolved(ID uint16) (ok bool) {
+  _, ok = team.Solved[ID]
+  return
 }
 
 func (team *Team) Sync(maxTries byte) error {
-  if err := TeamDB.syncTryHard(bson.M{"teamID": team.TeamID}, team, maxTries); err != nil {
-    return errors.New("Team.SyncTryHard: Error\n" + err.Error())
-  }
-
-  return nil
+  return TeamDB.replaceTryHard(bson.M{"teamID": team.TeamID}, team, maxTries)
 }
 
 /// Gives back the hint string
@@ -90,7 +79,7 @@ func (team *Team) Repoint() {
   points := 0
 
   for qid := range team.Solved {
-    ques, err := GetQuestionFromIDTryHard(qid, 5)
+    ques, err := QuestionFromID(qid, 5)
     if err != nil {
       log.Println("Error for teamID: ", hex.EncodeToString((*team.TeamID)[:]), "\n", err)
     }
@@ -98,7 +87,7 @@ func (team *Team) Repoint() {
   }
 
   for _, qid := range team.Hints {
-    ques, err := GetQuestionFromIDTryHard(qid, 5)
+    ques, err := QuestionFromID(qid, 5)
     if err != nil {
       log.Println("Error for teamID: ", hex.EncodeToString((*team.TeamID)[:]), "\n", err)
     }
