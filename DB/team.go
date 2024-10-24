@@ -6,8 +6,8 @@ import (
   "strings"
   "time"
 
-  "ccs.ctf/utils"
   "go.mongodb.org/mongo-driver/bson"
+  utils "github.com/ItsMeSamey/go_utils"
 )
 
 /// Database sorted by TeamID

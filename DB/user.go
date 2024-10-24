@@ -1,11 +1,11 @@
 package DB
 
 import (
-	"crypto/rand"
-	"errors"
+  "crypto/rand"
+  "errors"
 
-	"ccs.ctf/utils"
-	"go.mongodb.org/mongo-driver/bson"
+  "go.mongodb.org/mongo-driver/bson"
+  utils "github.com/ItsMeSamey/go_utils"
 )
 
 type (

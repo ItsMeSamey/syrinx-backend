@@ -3,9 +3,8 @@ package DB
 import (
   "time"
 
-  "ccs.ctf/utils"
-
   "go.mongodb.org/mongo-driver/bson"
+  utils "github.com/ItsMeSamey/go_utils"
 )
 
 type Question struct {
